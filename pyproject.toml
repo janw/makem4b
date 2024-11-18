@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "makem4b"
+version = "0.1.0"
+description = "Merge audio files into an audiobook."
+authors = ["Jan Willhaus <mail@janwillhaus.de>"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.0.1"
+ruff = "^0.7.4"
+ipdb = "^0.13.13"
+mypy = "^1.13.0"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-select = [
+    "I",   # isort
+    "B",   # bugbear
+    "A",   # builtins
+    "ISC", # implicit-str-concat
+    "Q",   # quotes
+    "TID", # tidy-imports
+    "C4",  # comprehensions
+    "SIM", # simplify
+    "C90", # mccabe
+]
+unfixable = [
+    "B", # bugbear
+]
+ignore = [
+    "SIM108", # if-else-block-instead-of-if-exp
+    "ISC001", # single-line-implicit-string-concatenation (conflicts with ruff format)
+]
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
