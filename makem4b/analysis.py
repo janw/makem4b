@@ -16,8 +16,8 @@ def _probe_file(file: Path) -> ProbedFile:
             stream_idx=idx,
             duration=round(float(stream["duration"]) * METADATA_TIMEBASE),
             codec=Codec(
-                bit_rate=float(stream["sample_rate"]),
-                sample_rate=round(float(stream["bit_rate"]) / 10) * 10,
+                bit_rate=float(stream["bit_rate"]),
+                sample_rate=round(float(stream["sample_rate"]) / 10) * 10,
                 channels=stream["channels"],
                 name=stream["codec_name"],
             ),

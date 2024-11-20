@@ -18,7 +18,7 @@ TRANSCODE_CMD_ARGS_FREE = [
     "-c:a",
     "aac",
 ]
-TRANSCODE_MIN_BITRATE = 96000
+TRANSCODE_MAX_BITRATE = 192000
 
 COPY_CMD_ARGS = [
     "-c:a",
@@ -50,7 +50,7 @@ def _make_input_args(inputs: list[Path | str] | Path | str) -> list[str]:
 def make_transcoding_args(file: ProbedFile) -> list[str]:
     codec_args = [
         "-b:a",
-        str(max(file.codec.bit_rate, TRANSCODE_MIN_BITRATE)),
+        str(min(file.codec.bit_rate, TRANSCODE_MAX_BITRATE)),
         "-ar",
         str(file.codec.sample_rate),
     ]

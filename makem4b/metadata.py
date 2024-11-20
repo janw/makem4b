@@ -33,7 +33,7 @@ def iterate_probed_file_metadata(files: list[ProbedFile]) -> Iterator[tuple[str,
         metadata = ffmpeg.get_metadata(file.filename)
         end_ts = start_ts + file.duration
         yield metadata, start_ts, end_ts
-    start_ts = end_ts + 1
+        start_ts = end_ts + 1
 
 
 @contextmanager
