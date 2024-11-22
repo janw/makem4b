@@ -2,8 +2,7 @@ from pathlib import Path
 from typing import Iterable
 
 from makem4b import ffmpeg
-from makem4b.metadata import METADATA_TIMEBASE
-from makem4b.models import Codec, ProbedFile, ProbeResult
+from makem4b.models import Metadata, ProbedFile, ProbeResult, Stream
 
 
 def _probe_file(file: Path) -> ProbedFile:
@@ -14,16 +13,11 @@ def _probe_file(file: Path) -> ProbedFile:
         result = ProbedFile(
             filename=file,
             stream_idx=idx,
-            duration=round(float(stream["duration"]) * METADATA_TIMEBASE),
-            codec=Codec(
-                bit_rate=float(stream["bit_rate"]),
-                sample_rate=round(float(stream["sample_rate"]) / 10) * 10,
-                channels=stream["channels"],
-                name=stream["codec_name"],
-            ),
+            stream=Stream.model_validate(stream),
+            metadata=Metadata.model_validate_strings(media.get("format", {}).get("tags", {})),
         )
 
-        print(f" -> {file}: {result.codec}")
+        print(f" -> {file}: {result.stream}")
         return result
     raise ValueError(f"File {file} contains no usable audio stream")
 
