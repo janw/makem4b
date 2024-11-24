@@ -1,0 +1,3 @@
+PROG_NAME = "makem4b"
+
+ENVVAR_PREFIX = PROG_NAME.upper()

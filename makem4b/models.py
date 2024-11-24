@@ -1,9 +1,19 @@
+from __future__ import annotations
+
+import re
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-DURATION_TIMEBASE = 1000
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from pathlib import Path
+
+
+def escape_ffmetadata(val: str) -> str:
+    re_escape = re.compile(r"([=;#\\])")
+    return re_escape.sub(r"\\\1", val)
 
 
 class Stream(BaseModel):
@@ -17,28 +27,55 @@ class Stream(BaseModel):
 
     @property
     def duration_ts(self) -> int:
-        return round(self.duration * DURATION_TIMEBASE)
+        return int(self.duration * 10e9)
+
+    def __eq__(self, o: object) -> bool:
+        if isinstance(o, Stream):
+            return (
+                self.codec_name == o.codec_name
+                and self.bit_rate == o.bit_rate
+                and self.sample_rate == o.sample_rate
+                and self.channels == o.channels
+            )
+        return super().__eq__(o)
 
 
 class Metadata(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    title: str = ""
-    artist: str = ""
     album: str = ""
+    artist: str = ""
     album_artist: str = ""
     composer: str = ""
     date: str = ""
-    genre: str = ""
-    track: str = ""
     disc: str = ""
-    audible_asin: str = Field("", alias="AUDIBLE_ASIN")
-    language: str = Field("", alias="LANGUAGE")
-    part: str = Field("", alias="PART")
+    genre: str = ""
+    title: str = ""
+    track: str = ""
     series: str = Field("", alias="SERIES")
     series_part: str = Field("", alias="SERIES-PART")
-    subtitle: str = Field("", alias="SUBTITLE")
+    movementname: str = Field("", alias="MOVEMENTNAME")
+    movement: str = Field("", alias="MOVEMENT")
+    subtitle: str = Field("", validation_alias="SUBTITLE", serialization_alias="TIT3")
     comment: str = ""
+    grouping: str = ""
+
+    @model_validator(mode="after")
+    def sync_series_and_movement(self) -> Metadata:
+        if self.series and not self.movementname:
+            self.movementname = self.series
+        elif self.movementname and not self.series:
+            self.series = self.movementname
+
+        if self.series_part and not self.movement:
+            self.movement = self.series_part
+        elif self.movement and not self.series_part:
+            self.series_part = self.movement
+
+        if not self.grouping and self.series and self.series_part:
+            self.grouping = f"{self.series} #{self.series_part}"
+
+        return self
 
     def to_tags(self) -> str:
         copied = self.model_copy()
@@ -47,25 +84,25 @@ class Metadata(BaseModel):
         copied.disc = "1"
 
         tags = [
-            f"{field}={value}"
+            f"{field}={escape_ffmetadata(value)}"
             for field, value in copied.model_dump(
                 mode="json",
                 exclude_unset=True,
                 exclude_none=True,
                 exclude_defaults=True,
+                by_alias=True,
             ).items()
         ]
-        return ";FFMETADATA1\n" + "\n".join(tags) + "\n"
+        return "\n".join(tags) + "\n"
 
     def to_chapter(self, start_ts: int, end_ts: int) -> str:
         props = [
             "[CHAPTER]",
-            f"TIMEBASE=1/{DURATION_TIMEBASE}",
             f"START={start_ts}",
             f"END={end_ts}",
             f"title={self.title}",
         ]
-        return "\n\n" + "\n".join(props) + "\n"
+        return "\n" + "\n".join(props) + "\n"
 
 
 @dataclass
@@ -76,17 +113,30 @@ class ProbedFile:
     stream: Stream
     metadata: Metadata
 
+    has_cover: bool = False
+
 
 @dataclass(slots=True)
 class ProbeResult:
     files: list[ProbedFile]
 
     @property
-    def can_copy(self) -> bool:
-        first = None
+    def allows_copying(self) -> bool:
         for file in self.files:
-            if not first:
-                first = file
-            elif file.stream != first:
+            if file.stream != self.first.stream:
                 return False
-        return first.name in ("aac", "libfdk_aac")
+        return self.first.stream.codec_name in ("aac", "libfdk_aac")
+
+    @property
+    def first(self) -> ProbedFile:
+        return self.files[0]
+
+    @property
+    def total_duration(self) -> int:
+        return round(sum(f.stream.duration for f in self))
+
+    def __iter__(self) -> Iterator[ProbedFile]:
+        yield from self.files
+
+    def __len__(self) -> int:
+        return len(self.files)

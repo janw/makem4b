@@ -12,36 +12,64 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.12"
 pydantic = "^2.10.1"
+rich-click = "^1.8.4"
+tqdm = "^4.67.0"
+loguru = "^0.7.2"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.0.1"
-ruff = "^0.7.4"
+ruff = "^0.8.0"
 ipdb = "^0.13.13"
 mypy = "^1.13.0"
+types-tqdm = "^4.67.0.20241119"
 
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-extend-select = [
+lint.extend-select = [
+    "F",   # pyflakes
+    "E",   # pycodestyle
+    "W",   # pycodestyle
     "I",   # isort
+    "N",   # naming conventions
+    "ANN", # type annotations
+    "S",   # bandit
     "B",   # bugbear
-    "A",   # builtins
+    "BLE", # blind except
+    "FBT", # boolean trap
+    "A",   # builtins shadowing
+    "COM", # commas
+    "DTZ", # datetimez (UTCs)
+    "T10", # debugger left
+    "EM",  # error message formatting
+    "EXE", # executable scripts
+    "LOG", # logging conventions
+    "G",   # logging format
     "ISC", # implicit-str-concat
     "Q",   # quotes
     "TID", # tidy-imports
     "C4",  # comprehensions
     "SIM", # simplify
     "C90", # mccabe
+    "TC",  # type-checking
+    "UP",  # upgrade
+    "FA",  # future-rewriteable typing
+    "INP", # implicit namespace package (missing __init__.py)
+
 ]
-unfixable = [
+lint.unfixable = [
     "B", # bugbear
+    "F841"  # assigned but unused
 ]
-ignore = [
+lint.ignore = [
     "SIM108", # if-else-block-instead-of-if-exp
     "ISC001", # single-line-implicit-string-concatenation (conflicts with ruff format)
+    "COM819", # ignore superfluous commas (used to force wrapping through ruff format)
+    "COM812", # ignore superfluous commas (used to force wrapping through ruff format)
+    "ANN401", # any type disallowed
 ]
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 max-complexity = 10
 
 [build-system]

@@ -6,7 +6,6 @@ ENV FFMPEG_COMMIT_SHA=507a51fbe9732f0f6f12f43ce12431e8faa834b7
 
 ARG ENABLE_FDKAAC=
 
-WORKDIR /src
 RUN \
     set -e; \
     FDKAAC_PKG=$(test -z "$ENABLE_FDKAAC" || echo "libfdk-aac-dev"); \
@@ -14,8 +13,8 @@ RUN \
         /etc/apt/sources.list.d/debian.sources; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update -qq; \
-    apt-get -y install \
-        $FDKAAC_PKG \
+    apt-get -y --no-install-recommends install \
+        "$FDKAAC_PKG" \
         autoconf \
         automake \
         build-essential \
@@ -38,12 +37,12 @@ RUN \
         zlib1g-dev \
     ;
 
-
+WORKDIR /ffmpeg
+# hadolint ignore=SC2086
 RUN \
     set -e; \
-    FDKAAC_FLAGS=$(test -z "$ENABLE_FDKAAC" || echo " --enable-libfdk-aac --enable-nonfree "); \
-    git init -q ffmpeg; \
-    cd ffmpeg; \
+    FDKAAC_FLAGS=$(test -z "$ENABLE_FDKAAC" || echo "--enable-libfdk-aac --enable-nonfree "); \
+    git init -q . ; \
     git remote add origin https://git.ffmpeg.org/ffmpeg.git; \
     git fetch origin --depth=1 "$FFMPEG_COMMIT_SHA"; \
     git reset --hard FETCH_HEAD; \
@@ -70,7 +69,7 @@ COPY pyproject.toml poetry.lock ./
 
 RUN \
     set -e; \
-    pip install  pip "poetry==$POETRY_VERSION"; \
+    pip install pip "poetry==$POETRY_VERSION"; \
     python -m venv /venv; \
     . /venv/bin/activate; \
     poetry install \
@@ -96,7 +95,7 @@ RUN set -e; \
         /etc/apt/sources.list.d/debian.sources; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update && apt-get install -y --no-install-recommends \
-        $FDKAAC_PKG \
+        "$FDKAAC_PKG" \
         libmp3lame0 \
         libopus0 \
         libvorbis0a \
@@ -119,7 +118,7 @@ ENV PYTHONPATH=/src
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /src
-COPY --from=build /src/ffmpeg/ffprobe /src/ffmpeg/ffmpeg /usr/local/bin/
+COPY --from=build /ffmpeg/ffprobe /ffmpeg/ffmpeg /usr/local/bin/
 COPY --from=build /venv /venv
 COPY makem4b ./makem4b
 
