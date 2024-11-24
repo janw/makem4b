@@ -50,6 +50,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64/v8
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
           cache-to: |
             type=inline
           cache-from: |

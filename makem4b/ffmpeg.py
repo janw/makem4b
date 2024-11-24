@@ -5,18 +5,18 @@ import re
 import shlex
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from loguru import logger
-from rich import print as rprint
-from tqdm import tqdm
+
+from makem4b.emoji import Emoji
+from makem4b.utils import TaskProgress, pinfo
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from makem4b.models import ProbedFile
+    from makem4b.models import CodecParams
 
-DEBUG = False
 
 FFMPEG_CMD_BIN = "ffmpeg"
 
@@ -95,31 +95,26 @@ def _make_input_args(inputs: list[Path | str] | Path | str) -> list[str]:
     return args
 
 
-def make_transcoding_args(file: ProbedFile) -> list[str]:
+def make_transcoding_args(codec: CodecParams) -> list[str]:
     codec_args = [
-        "-b:a",
-        str(min(file.stream.bit_rate, TRANSCODE_MAX_BITRATE)),
         "-ar",
-        str(file.stream.sample_rate),
+        str(codec.sample_rate * 1000),
+        "-b:a",
+        str(min(codec.bit_rate * 1000, TRANSCODE_MAX_BITRATE)),
     ]
 
     version_output = subprocess.check_output(  # noqa: S603
-        [
-            FFMPEG_CMD_BIN,
-            "-version",
-        ],
+        [FFMPEG_CMD_BIN, "-version"],
         stderr=subprocess.PIPE,
     ).decode()
 
     if "enable-libfdk-aac" in version_output:
-        rprint("Using [b]libfdk-aac[/] encoder")
+        pinfo(Emoji.FDKAAC, "Using libfdk-aac encoder")
         return TRANSCODE_CMD_ARGS_FDK + codec_args
-    rprint("Using native FFmpeg encoder")
     return TRANSCODE_CMD_ARGS_FREE + codec_args
 
 
 def _poll_for_progress(process: subprocess.Popen) -> Generator[int, None, None]:
-    last_val = 0
     while True:
         if process.stdout is None:
             continue
@@ -129,9 +124,7 @@ def _poll_for_progress(process: subprocess.Popen) -> Generator[int, None, None]:
             break
 
         if match := re_progress.search(stdout_line):
-            new_val = round(int(match.group(1)) * 10e-7)
-            yield new_val - last_val
-            last_val = new_val
+            yield round(int(match.group(1)) * 10e-7)
 
 
 def _check_result(process: subprocess.Popen | subprocess.CompletedProcess, *, args: list[str]) -> None:
@@ -185,7 +178,7 @@ def probe(file: Path) -> dict:
                 "-show_entries",
                 "format_tags",
             ],
-            stderr=subprocess.PIPE if DEBUG else None,
+            stderr=subprocess.PIPE,
         )
         return json.loads(probe_res)
     except json.JSONDecodeError as exc:
@@ -196,8 +189,7 @@ def probe(file: Path) -> dict:
         raise RuntimeError(msg) from exc
 
 
-def convert(inputs: list[Path | str], args: list[str], *, output: Path, **process_kwargs: Any) -> None:
-    process_kwargs.setdefault("leave", False)
+def convert(inputs: list[Path | str], args: list[str], *, output: Path, progress: TaskProgress) -> None:
     if output.suffix in (".m4a", ".m4b"):
         args = args + CONCAT_AAC_ADDED_ARGS
     try:
@@ -207,9 +199,8 @@ def convert(inputs: list[Path | str], args: list[str], *, output: Path, **proces
             str(output),
         ]
         logger.debug("Running command: {}", shlex.join(all_args))
-        progress = tqdm(unit="s", **process_kwargs)
-        for chunk in wrapped_ffmpeg(all_args):
-            progress.update(chunk)
+        for completed in wrapped_ffmpeg(all_args):
+            progress.update(completed=completed)
         progress.close()
     except subprocess.CalledProcessError as exc:
         msg = f"Conversion failed: {exc.stderr.decode()}"

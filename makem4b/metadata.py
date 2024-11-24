@@ -3,9 +3,9 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
-from rich import print as rprint
-
 from makem4b import ffmpeg
+from makem4b.emoji import Emoji
+from makem4b.utils import pinfo
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterator
@@ -28,7 +28,7 @@ def enumerate_timestamped_files(
 
 @contextmanager
 def generate_metadata(probed: ProbeResult, *, keep: bool) -> Generator[Path, None, None]:
-    rprint("\n[b]Generating metadata and chapters ...[/]")
+    pinfo(Emoji.METADATA, "Generating metadata and chapters")
     metadata_file = probed.first.filename.with_suffix(".metadata.txt")
     try:
         with metadata_file.open("w") as fh:
@@ -49,7 +49,7 @@ def extract_cover_img(probed: ProbeResult, *, keep: bool) -> Generator[Path | No
     if not probed.first.has_cover:
         yield None
         return
-    rprint("\n[b]Extracting cover image ...[/]")
+    pinfo(Emoji.COVER, "Extracting cover image")
     cover_file = probed.first.filename.with_suffix(".cover.mp4")
     try:
         ffmpeg.extract_cover_img(probed.first.filename, output=cover_file)
