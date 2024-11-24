@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "makem4b"
-version = "0.1.0"
+version = "0.0.1"
 description = "Merge audio files into an audiobook."
 authors = ["Jan Willhaus <mail@janwillhaus.de>"]
 license = "Apache-2.0"
@@ -22,6 +22,19 @@ ruff = "^0.8.0"
 ipdb = "^0.13.13"
 mypy = "^1.13.0"
 types-tqdm = "^4.67.0.20241119"
+
+[tool.commitizen]
+version_scheme = "semver"
+version_provider = "poetry"
+version_files = [
+    "pyproject.toml:version = ",
+    "makem4b/__init__.py",
+]
+annotated_tag = true
+tag_format = "v$version"
+update_changelog_on_bump = true
+changelog_start_rev = "v0.0.1"
+gpg_sign = true
 
 [tool.ruff]
 line-length = 120
