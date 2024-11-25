@@ -119,13 +119,6 @@ class Metadata(BaseModel):
         ]
         return "\n" + "\n".join(props) + "\n"
 
-    def to_filename_stem(self) -> str:
-        stem = f"{self.artist} -"
-        if (grp := self.grouping) and grp not in self.album:
-            stem += f" {grp} -"
-        stem += f" {self.album}"
-        return stem
-
 
 @dataclass
 class ProbedFile:
@@ -145,6 +138,17 @@ class ProbedFile:
             bit_rate=round(self.stream.bit_rate / 1000, 1),
             channels=self.stream.channels,
         )
+
+    def to_filename_stem(self) -> str:
+        metadata = self.metadata
+        if not metadata.artist and not metadata.album:
+            return self.filename.stem + "_merged"
+
+        stem = f"{metadata.artist} -"
+        if (grp := metadata.grouping) and grp not in metadata.album:
+            stem += f" {grp} -"
+        stem += f" {metadata.album}"
+        return stem
 
 
 @dataclass

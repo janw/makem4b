@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 from makem4b import ffmpeg
@@ -8,7 +7,7 @@ from makem4b.emoji import Emoji
 from makem4b.utils import pinfo
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Iterator
+    from collections.abc import Iterator
     from pathlib import Path
 
     from makem4b.models import ProbedFile, ProbeResult
@@ -26,34 +25,23 @@ def enumerate_timestamped_files(
         start_ts = end_ts + 1
 
 
-@contextmanager
-def generate_metadata(probed: ProbeResult, *, keep: bool) -> Generator[Path, None, None]:
+def generate_metadata(probed: ProbeResult, *, tmpdir: Path) -> Path:
     pinfo(Emoji.METADATA, "Generating metadata and chapters")
-    metadata_file = probed.first.filename.with_suffix(".metadata.txt")
-    try:
-        with metadata_file.open("w") as fh:
-            fh.write(FFMPEG_METADATA_HEADER)
-            for idx, start_ts, end_ts, file in enumerate_timestamped_files(probed):
-                if idx == 0:
-                    fh.write(file.metadata.to_tags())
-                fh.write(file.metadata.to_chapter(start_ts, end_ts))
-            fh.flush()
-        yield metadata_file
-    finally:
-        if not keep:
-            metadata_file.unlink()
+    metadata_file = tmpdir / "metadata.txt"
+    with metadata_file.open("w") as fh:
+        fh.write(FFMPEG_METADATA_HEADER)
+        for idx, start_ts, end_ts, file in enumerate_timestamped_files(probed):
+            if idx == 0:
+                fh.write(file.metadata.to_tags())
+            fh.write(file.metadata.to_chapter(start_ts, end_ts))
+        fh.flush()
+    return metadata_file
 
 
-@contextmanager
-def extract_cover_img(probed: ProbeResult, *, keep: bool) -> Generator[Path | None, None, None]:
+def extract_cover_img(probed: ProbeResult, *, tmpdir: Path) -> Path | None:
     if not probed.first.has_cover:
-        yield None
-        return
+        return None
     pinfo(Emoji.COVER, "Extracting cover image")
-    cover_file = probed.first.filename.with_suffix(".cover.mp4")
-    try:
-        ffmpeg.extract_cover_img(probed.first.filename, output=cover_file)
-        yield cover_file
-    finally:
-        if not keep:
-            cover_file.unlink(missing_ok=True)
+    cover_file = tmpdir / "cover.mp4"
+    ffmpeg.extract_cover_img(probed.first.filename, output=cover_file)
+    return cover_file

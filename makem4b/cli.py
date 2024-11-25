@@ -1,4 +1,3 @@
-from contextlib import nullcontext
 from pathlib import Path
 
 import rich_click as click
@@ -7,9 +6,9 @@ from loguru import logger
 
 from makem4b import constants
 from makem4b.analysis import print_probe_result, probe_files
-from makem4b.base import generate_output_filename, merge, move_files
+from makem4b.base import generate_output_filename, handle_temp_storage, merge, move_files
 from makem4b.emoji import Emoji
-from makem4b.intermediates import generate_intermediates
+from makem4b.intermediates import generate_concat_file, generate_intermediates
 from makem4b.metadata import extract_cover_img, generate_metadata
 from makem4b.utils import pinfo
 
@@ -81,6 +80,7 @@ click.rich_click.MAX_WIDTH = 140
     default=None,
 )
 @click.option(
+    "-k",
     "--keep-intermediates",
     type=bool,
     is_flag=True,
@@ -98,7 +98,7 @@ def main(
     ctx: click.RichContext,
     files: list[Path],
     cover: Path | None,
-    move_originals: Path | None,
+    move_originals_to: Path | None,
     analyze_only: bool,  # noqa: FBT001
     avoid_transcode: bool,  # noqa: FBT001
     keep_intermediates: bool,  # noqa: FBT001
@@ -147,22 +147,24 @@ def main(
         raise Exit(0)
 
     output = generate_output_filename(result, avoid_transcode=avoid_transcode, overwrite=overwrite)
-    with (
-        generate_intermediates(result, keep=keep_intermediates, avoid_transcode=avoid_transcode) as intermediates,
-        generate_metadata(result, keep=keep_intermediates) as metadata_file,
-        extract_cover_img(result, keep=keep_intermediates) if not cover else nullcontext(None) as extracted_cover_file,
-    ):
+
+    with handle_temp_storage(result, keep=keep_intermediates) as tmpdir:
+        intermediates = generate_intermediates(result, tmpdir=tmpdir, avoid_transcode=avoid_transcode)
+        concat_file = generate_concat_file(intermediates, tmpdir=tmpdir)
+        metadata_file = generate_metadata(result, tmpdir=tmpdir)
+        cover_file = cover or extract_cover_img(result, tmpdir=tmpdir)
+
         merge(
-            intermediates,
+            concat_file,
             metadata_file=metadata_file,
-            cover_file=cover or extracted_cover_file,
+            cover_file=cover_file,
             total_duration=result.total_duration,
             output=output,
         )
     pinfo(Emoji.SAVE, f'Saved to "{output.relative_to(constants.CWD)}"', style="bold green")
 
-    if move_originals:
-        move_files(result, target_path=move_originals, subdir=output.stem)
+    if move_originals_to:
+        move_files(result, target_path=move_originals_to, subdir=output.stem)
 
 
 if __name__ == "__main__":

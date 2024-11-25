@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rich import get_console
@@ -7,6 +8,8 @@ from rich import get_console
 from makem4b.emoji import Emoji
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rich.progress import Progress, TaskID
 
 
@@ -27,3 +30,8 @@ class TaskProgress(NamedTuple):
 
     def close(self) -> None:
         self.progress.remove_task(self.task_id)
+
+
+def escape_concat_filename(val: Path) -> str:
+    re_escape = re.compile(r"([^a-zA-Z0-9\/\._-])")
+    return re_escape.sub(r"\\\1", str(val.absolute()))

@@ -44,19 +44,13 @@ TRANSCODE_CMD_ARGS_FREE = [
 ]
 TRANSCODE_MAX_BITRATE = 192000
 
-COPY_CMD_ARGS = [
-    "-c:a",
-    "copy",
-    "-map",
-    "0:a",
-]
 CONCAT_CMD_ARGS = [
     "-c:a",
     "copy",
     "-map_metadata",
-    "0",
+    "1",
     "-map_chapters",
-    "0",
+    "1",
 ]
 CONCAT_AAC_ADDED_ARGS = [
     "-movflags",
@@ -69,7 +63,7 @@ CONCAT_APPEND_COVER_ADDED_ARGS = [
     "-c:v",
     "copy",
     "-map",
-    "1:a",
+    "0:a",
     "-map",
     "2:v",
     "-disposition:1",
@@ -190,10 +184,30 @@ def probe(file: Path) -> dict:
 
 
 def convert(inputs: list[Path | str], args: list[str], *, output: Path, progress: TaskProgress) -> None:
+    try:
+        all_args = [
+            *_make_input_args(inputs),
+            *args,
+            str(output),
+        ]
+        logger.debug("Running command: {}", shlex.join(all_args))
+        for completed in wrapped_ffmpeg(all_args):
+            progress.update(completed=completed)
+        progress.close()
+    except subprocess.CalledProcessError as exc:
+        msg = f"Conversion failed: {exc.stderr.decode()}"
+        raise RuntimeError(msg) from exc
+
+
+def concat(inputs: list[Path | str], args: list[str], *, output: Path, progress: TaskProgress) -> None:
     if output.suffix in (".m4a", ".m4b"):
         args = args + CONCAT_AAC_ADDED_ARGS
     try:
         all_args = [
+            "-f",
+            "concat",
+            "-safe",
+            "0",
             *_make_input_args(inputs),
             *args,
             str(output),
