@@ -42,14 +42,20 @@ WORKDIR /ffmpeg
 RUN \
     set -e; \
     FDKAAC_FLAGS=$(test -z "$ENABLE_FDKAAC" || echo "--enable-libfdk-aac --enable-nonfree "); \
+    export SRC=/usr/local; \
     git init -q . ; \
     git remote add origin https://git.ffmpeg.org/ffmpeg.git; \
     git fetch origin --depth=1 "$FFMPEG_COMMIT_SHA"; \
     git reset --hard FETCH_HEAD; \
     \
     ./configure \
+        --prefix="${SRC}" \
+        --bindir="${SRC}/bin" \
         --pkg-config-flags="--static" \
+        --extra-cflags="-I${SRC}/include -static" \
+        --extra-ldflags="-L${SRC}/lib -static" \
         --ld="g++" \
+        --disable-debug \
         --disable-doc \
         --enable-gpl \
         --enable-libmp3lame \
@@ -57,7 +63,9 @@ RUN \
         --enable-libvorbis \
         $FDKAAC_FLAGS \
     ; \
-    make -j8
+    make -j$(($(grep -c ^processor /proc/cpuinfo) + 1)); \
+    make install; \
+    make distclean
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PIP_NO_CACHE_DIR=1
@@ -87,21 +95,9 @@ RUN \
 
 FROM python:3.12-slim
 
-ARG ENABLE_FDKAAC=
-
 RUN set -e; \
-    FDKAAC_PKG=$(test -z "$ENABLE_FDKAAC" || echo "libfdk-aac2"); \
-    test -z "$ENABLE_FDKAAC" || sed -i '/Components/ s/$/ non-free/' \
-        /etc/apt/sources.list.d/debian.sources; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update && apt-get install -y --no-install-recommends \
-        "$FDKAAC_PKG" \
-        libmp3lame0 \
-        libopus0 \
-        libvorbis0a \
-        libvorbisenc2 \
-        libxcb1 \
-        libxcb-shm0 \
         tini \
     ; \
     apt-get clean; \
@@ -118,9 +114,9 @@ ENV PYTHONPATH=/src
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /src
-COPY --from=build /ffmpeg/ffprobe /ffmpeg/ffmpeg /usr/local/bin/
+COPY --from=build /usr/local/bin/ffprobe /usr/local/bin/ffmpeg /usr/local/bin/
 COPY --from=build /venv /venv
 COPY makem4b ./makem4b
 
-ENTRYPOINT [ "tini", "--", "python3", "-m", "makem4b" ]
+ENTRYPOINT [ "tini", "--", "python3", "-m", "makem4b.cli" ]
 CMD [ "--help" ]
