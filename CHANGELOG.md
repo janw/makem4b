@@ -1,3 +1,9 @@
+## v0.2.4 (2024-11-26)
+
+### Fix
+
+- Remove extraneous parens
+
 ## v0.2.3 (2024-11-26)
 
 ### Fix
