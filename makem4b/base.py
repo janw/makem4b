@@ -6,8 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from click.exceptions import Exit
-from rich.progress import Progress
-from tqdm import tqdm
+from rich.progress import Progress, track
 
 from makem4b import constants, ffmpeg
 from makem4b.emoji import Emoji
@@ -39,7 +38,7 @@ def move_files(result: ProbeResult, target_path: Path, subdir: str) -> None:
     common = Path(commonpath(f.filename for f in result))
     if not common.is_file():
         common = result.first.filename.parent
-    for file in tqdm(result, desc="Moving files", leave=False, miniters=1):
+    for file in track(result, description="Moving files", transient=True):
         file_target = target_path / subdir / file.filename.relative_to(common)
         file_target.parent.mkdir(exist_ok=True)
         file.filename.replace(file_target)
