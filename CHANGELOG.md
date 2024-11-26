@@ -1,3 +1,10 @@
+## v0.2.3 (2024-11-26)
+
+### Fix
+
+- Reduce caching complexity
+- Avoid duplicate container build
+
 ## v0.2.2 (2024-11-26)
 
 ### Fix
