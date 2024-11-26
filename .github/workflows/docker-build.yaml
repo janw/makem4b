@@ -59,11 +59,9 @@ jobs:
           platforms: linux/amd64,linux/arm64/v8
           cache-to: |
             type=inline
-            type=registry,ref=ghcr.io/${{ github.repository }}/buildcache:${{ github.ref_name }},mode=max
+            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
           cache-from: |
-            type=registry,ref=ghcr.io/${{ github.repository }}/buildcache:${{ github.ref_name }}
-            type=registry,ref=ghcr.io/${{ github.repository }}/buildcache:edge
-            type=registry,ref=ghcr.io/${{ github.repository }}/buildcache:latest
+            type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
             type=registry,ref=ghcr.io/${{ github.repository }}:edge
             type=registry,ref=ghcr.io/${{ github.repository }}:latest
       - name: Image digest
