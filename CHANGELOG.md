@@ -1,3 +1,9 @@
+## v0.2.5 (2024-11-28)
+
+### Fix
+
+- Correct docker entrypoint, improve build
+
 ## v0.2.4 (2024-11-26)
 
 ### Fix
