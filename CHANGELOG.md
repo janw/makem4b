@@ -1,3 +1,9 @@
+## v0.4.2 (2024-11-29)
+
+### Fix
+
+- Point poetry to correct package dir
+
 ## v0.4.1 (2024-11-29)
 
 ### Fix
