@@ -6,6 +6,24 @@ authors = ["Jan Willhaus <mail@janwillhaus.de>"]
 license = "Apache-2.0"
 readme = "README.md"
 packages = [{ include = "makem4b" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Multimedia",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Utilities",
+]
+repository = "https://github.com/janw/makem4b"
+
+[tool.poetry.urls]
+"Bug Reports" = "https://github.com/janw/makem4b/issues"
+
+[tool.poetry.scripts]
+makem4b = 'makem4b.cli:main'
 
 [tool.poetry.dependencies]
 python = "^3.12"
