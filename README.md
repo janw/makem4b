@@ -42,10 +42,10 @@ docker run --tty --rm -w /here -v "$PWD:/here" ghcr.io/janw/makem4b glob/of/file
 Slightly more advanced:
 
 ```sh
-docker run --tty --rm -e PUID=816 -e GUID=1006 -v /here -v "$PWD:/here" ghcr.io/janw/makem4b -ty -m originals glob/of/files/*.mp3
+docker run --tty --rm -e PUID=816 -e PGID=1006 -v /here -v "$PWD:/here" ghcr.io/janw/makem4b -ty -m originals glob/of/files/*.mp3
 ```
 
-* `-e PUID=816 -e GUID=1006` Writing/moving files as user:group 816:1006
+* `-e PUID=816 -e PGID=1006` Writing/moving files as user:group 816:1006
 * `-t`: Avoiding transcode, saving output with original filetype (mp3)
 * `-y`: Overwrite existing output file
 * `-m originals`: Move original files to a subdirectory within `originals` after completion
