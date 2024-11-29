@@ -10,7 +10,7 @@ from makem4b.base import generate_output_filename, handle_temp_storage, merge, m
 from makem4b.emoji import Emoji
 from makem4b.intermediates import generate_concat_file, generate_intermediates
 from makem4b.metadata import extract_cover_img, generate_metadata
-from makem4b.utils import pinfo
+from makem4b.utils import copy_mtime, pinfo
 
 click.rich_click.USE_RICH_MARKUP = True
 click.rich_click.USE_MARKDOWN = True
@@ -161,6 +161,8 @@ def main(
             total_duration=result.total_duration,
             output=output,
         )
+
+    copy_mtime(result.first.filename, output)
     pinfo(Emoji.SAVE, f'Saved to "{output.relative_to(constants.CWD)}"', style="bold green")
 
     if move_originals_to:

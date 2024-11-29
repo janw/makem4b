@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 from typing import TYPE_CHECKING, Any, NamedTuple
 
@@ -35,3 +36,8 @@ class TaskProgress(NamedTuple):
 def escape_concat_filename(val: Path) -> str:
     re_escape = re.compile(r"([^a-zA-Z0-9\/\._-])")
     return re_escape.sub(r"\\\1", str(val.absolute()))
+
+
+def copy_mtime(from_: Path, to: Path) -> None:
+    stat = from_.stat()
+    os.utime(to, (stat.st_atime, stat.st_mtime))
