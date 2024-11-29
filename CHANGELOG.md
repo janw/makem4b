@@ -1,3 +1,9 @@
+## v0.2.6 (2024-11-29)
+
+### Fix
+
+- Move files across filesystems
+
 ## v0.2.5 (2024-11-28)
 
 ### Fix
