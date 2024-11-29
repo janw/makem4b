@@ -1,3 +1,9 @@
+## v0.5.1 (2024-11-29)
+
+### Fix
+
+- Complete subcommand transition
+
 ## v0.5.0 (2024-11-29)
 
 ### Feat
