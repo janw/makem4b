@@ -7,7 +7,7 @@ class Emoji(StrEnum):
     MERGE = "🙏"
     METADATA = "📝"
     REMUX = "🫶"
-    REMUX_FORCED = "🐲"
+    EVADED_DRAGONS = "🐲"
     STOP = "🙅"
     COVER = "🖼️"
     TRANSCODE = "🧮"

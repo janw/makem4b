@@ -54,7 +54,7 @@ def generate_output_filename(result: ProbeResult, *, avoid_transcode: bool, over
     elif mode == ProcessingMode.TRANSCODE_MIXED:
         pinfo(Emoji.MUST_TRANSCODE, f"Mixed codec properties, must transcode {ext}")
 
-    output = result.first.filename.with_name(result.first.to_filename_stem() + ext)
+    output = result.first.filename.with_name(result.first.to_filename_stem() + ext).resolve()
     if output.is_file() and not overwrite:
         pinfo(Emoji.STOP, "Target file already exists:", output.relative_to(constants.CWD), style="bold red")
         raise Exit(1)

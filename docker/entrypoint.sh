@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-CLI_CMD='python3 -m makem4b.cli'
+CLI_CMD='python3 -m makem4b'
 
 groupmod -o -g "${PGID:-911}" abc >/dev/null
 usermod -o -u "${PUID:-911}" abc >/dev/null

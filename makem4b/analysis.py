@@ -80,10 +80,15 @@ def print_probe_result(probed: ProbeResult) -> None:
         no_wrap=True,
         footer=f"{codec.channels:d}",
     )
-    table.add_column(
-        "Files",
-        "Can be remuxed " + Emoji.REMUX if mode == ProcessingMode.REMUX else "Requires transcoding " + Emoji.TRANSCODE,
-    )
+
+    match mode:
+        case ProcessingMode.TRANSCODE_MIXED:
+            msg = "Requires transcoding " + Emoji.TRANSCODE
+        case ProcessingMode.TRANSCODE_UNIFORM:
+            msg = f"Remuxable as {probed.first.filename.suffix} (use --avoid-transcode) " + Emoji.AVOIDING_TRANSCODE
+        case ProcessingMode.REMUX:
+            msg = "Remuxable " + Emoji.REMUX
+    table.add_column("Files", msg)
 
     for codec, files in probed.seen_codecs.items():
         table.add_row(

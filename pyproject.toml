@@ -82,7 +82,6 @@ lint.extend-select = [
     "UP",  # upgrade
     "FA",  # future-rewriteable typing
     "INP", # implicit namespace package (missing __init__.py)
-    "D",   # docstrings
     "D200",
     "D209",
     "D400",
@@ -98,13 +97,6 @@ lint.ignore = [
     "COM819", # ignore superfluous commas (used to force wrapping through ruff format)
     "COM812", # ignore superfluous commas (used to force wrapping through ruff format)
     "ANN401", # any type disallowed
-    "D417",   # require function params in docstrings
-    "D100",
-    "D101",  # TODO: remove
-    "D102",  # TODO: remove
-    "D103",  # TODO: remove
-    "D104",
-    "D105",
 ]
 
 [tool.ruff.lint.pydocstyle]

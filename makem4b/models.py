@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, NamedTuple
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from makem4b import constants
+from makem4b.emoji import Emoji
+from makem4b.utils import pinfo
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -150,6 +152,10 @@ class ProbedFile:
         stem += f" {metadata.album}"
         return stem
 
+    @property
+    def matches_prospective_output(self) -> bool:
+        return self.filename.stem == self.to_filename_stem()
+
 
 @dataclass
 class ProbeResult:
@@ -159,8 +165,24 @@ class ProbeResult:
     seen_codecs: dict[CodecParams, list[Path]] = field(init=False)
 
     def __post_init__(self) -> None:
+        self._remove_prospective_output()
         self.seen_codecs = self._generate_seen_codecs()
         self.processing_params = self._generate_processing_params()
+
+    def _remove_prospective_output(self) -> None:
+        clean_files = []
+        for file in self.files:
+            if file.matches_prospective_output:
+                pinfo(
+                    Emoji.EVADED_DRAGONS,
+                    "Removed input that looks too much like the prospective output:",
+                    file.filename.name,
+                    style="yellow",
+                )
+                continue
+
+            clean_files.append(file)
+        self.files = clean_files
 
     def _generate_seen_codecs(self) -> dict[CodecParams, list[Path]]:
         codecs: dict[CodecParams, list[Path]] = defaultdict(list)

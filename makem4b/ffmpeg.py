@@ -114,7 +114,7 @@ def _poll_for_progress(process: subprocess.Popen) -> Generator[int, None, None]:
             continue
 
         stdout_line = process.stdout.readline().decode("utf-8", errors="replace").strip()
-        if stdout_line == "" and process.poll() is not None:
+        if process.poll() is not None:
             break
 
         if match := re_progress.search(stdout_line):

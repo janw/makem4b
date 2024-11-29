@@ -41,3 +41,9 @@ def escape_concat_filename(val: Path) -> str:
 def copy_mtime(from_: Path, to: Path) -> None:
     stat = from_.stat()
     os.utime(to, (stat.st_atime, stat.st_mtime))
+
+
+def comma_separated_suffix_list(val: str | list[str]) -> list[str]:
+    if isinstance(val, str):
+        val = val.split(",")
+    return ["." + v.lstrip(".") for v in val]
