@@ -66,7 +66,7 @@ CONCAT_APPEND_COVER_ADDED_ARGS = [
     "0:a",
     "-map",
     "2:v",
-    "-disposition:1",
+    "-disposition:2",
     "attached_pic",
     "-metadata:s:v",
     'title="Album cover"',
