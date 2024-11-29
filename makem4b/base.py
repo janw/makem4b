@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 from contextlib import contextmanager
 from os.path import commonpath
 from pathlib import Path
@@ -41,7 +42,7 @@ def move_files(result: ProbeResult, target_path: Path, subdir: str) -> None:
     for file in track(result, description="Moving files", transient=True):
         file_target = target_path / subdir / file.filename.relative_to(common)
         file_target.parent.mkdir(exist_ok=True)
-        file.filename.replace(file_target)
+        shutil.move(file.filename, file_target)
 
 
 def generate_output_filename(result: ProbeResult, *, avoid_transcode: bool, overwrite: bool) -> Path:
