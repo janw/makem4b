@@ -15,3 +15,4 @@ class Emoji(StrEnum):
     SAVE = "💾"
     AVOIDING_TRANSCODE = "🍸"
     MUST_TRANSCODE = "🙈"
+    NO_FILES = "🤷"

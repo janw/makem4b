@@ -136,7 +136,9 @@ def main(
     if debug:
         logger.enable("makem4b")
     if not files:
+        pinfo(Emoji.NO_FILES, "No files given.", style="bold yellow")
         click.echo(ctx.command.get_help(ctx))
+        raise Exit(1)
 
     if cover and cover.suffix.lower() not in (".png", "jpeg", ".jpg"):
         ctx.fail("Argument -c/--cover must point to JPEG or PNG file.")

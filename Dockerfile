@@ -99,6 +99,7 @@ RUN set -e; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update && apt-get install -y --no-install-recommends \
         tini \
+        gosu \
     ; \
     apt-get clean; \
     rm -rf \
@@ -106,8 +107,10 @@ RUN set -e; \
         /var/lib/dpkg/* \
         /var/lib/apt/* \
         /var/cache/* \
-        /var/log/*
-
+        /var/log/* \
+    ; \
+    useradd -u 911 -U -d /config -s /bin/false abc; \
+    usermod -G users abc;
 
 ENV PATH=/venv/bin:$PATH
 ENV PYTHONPATH=/src
@@ -116,7 +119,8 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /src
 COPY --from=build /usr/local/bin/ffprobe /usr/local/bin/ffmpeg /usr/local/bin/
 COPY --from=build /venv /venv
+COPY docker/entrypoint.sh /
 COPY makem4b ./makem4b
 
-ENTRYPOINT [ "tini", "--", "python3", "-m", "makem4b.cli" ]
+ENTRYPOINT [ "tini", "--", "/entrypoint.sh" ]
 CMD [ "--help" ]
