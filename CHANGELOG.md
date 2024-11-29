@@ -1,3 +1,10 @@
+## v0.5.2 (2024-11-29)
+
+### Fix
+
+- Fix cover stream disposition
+- Make safe filenames
+
 ## v0.5.1 (2024-11-29)
 
 ### Fix
