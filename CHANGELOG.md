@@ -1,3 +1,9 @@
+## v0.5.0 (2024-11-29)
+
+### Feat
+
+- Make subcommands; merge, recursive
+
 ## v0.4.4 (2024-11-29)
 
 ### Fix
