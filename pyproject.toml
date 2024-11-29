@@ -36,7 +36,6 @@ pre-commit = "^4.0.1"
 ruff = "^0.8.0"
 ipdb = "^0.13.13"
 mypy = "^1.13.0"
-types-tqdm = "^4.67.0.20241119"
 
 [tool.commitizen]
 version_scheme = "semver"
