@@ -1,3 +1,9 @@
+## v0.4.3 (2024-11-29)
+
+### Fix
+
+- Update PyPI metadata, entrypoint
+
 ## v0.4.2 (2024-11-29)
 
 ### Fix
