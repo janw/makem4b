@@ -3,8 +3,8 @@ set -e
 
 CLI_CMD='python3 -m makem4b.cli'
 
-groupmod -o -g "${PUID:-911}" abc >/dev/null
-usermod -o -u "${PGID:-911}" abc >/dev/null
+groupmod -o -g "${PGID:-911}" abc >/dev/null
+usermod -o -u "${PUID:-911}" abc >/dev/null
 
 
 case $1 in
