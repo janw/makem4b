@@ -5,9 +5,7 @@ description = "Merge audio files into an audiobook."
 authors = ["Jan Willhaus <mail@janwillhaus.de>"]
 license = "Apache-2.0"
 readme = "README.md"
-packages = [
-    { include = "makem4b", from = "src" },
-]
+packages = [{ include = "makem4b" }]
 
 [tool.poetry.dependencies]
 python = "^3.12"
