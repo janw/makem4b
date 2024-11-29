@@ -1,3 +1,13 @@
+## v0.4.0 (2024-11-29)
+
+### Feat
+
+- Publish to PyPI
+
+### Fix
+
+- Ensure privileges are dropped on entry
+
 ## v0.3.0 (2024-11-29)
 
 ### Feat
