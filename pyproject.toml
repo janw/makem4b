@@ -23,7 +23,7 @@ repository = "https://github.com/janw/makem4b"
 "Bug Reports" = "https://github.com/janw/makem4b/issues"
 
 [tool.poetry.scripts]
-makem4b = 'makem4b.cli:main'
+makem4b = 'makem4b.cli.base:main'
 
 [tool.poetry.dependencies]
 python = "^3.12"

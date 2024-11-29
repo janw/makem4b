@@ -16,10 +16,16 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
 
+re_escape = re.compile(r"([=;#\\])")
+re_filename = re.compile(r"[/\\?%*:|\"<>\x7F\x00-\x1F]")
+
 
 def escape_ffmetadata(val: str) -> str:
-    re_escape = re.compile(r"([=;#\\])")
     return re_escape.sub(r"\\\1", val)
+
+
+def escape_filename(val: str) -> str:
+    return re_filename.sub("-", val)
 
 
 class ProcessingMode(StrEnum):
@@ -132,6 +138,8 @@ class ProbedFile:
 
     has_cover: bool = False
 
+    _filename_stem: str = ""
+
     @property
     def codec_params(self) -> CodecParams:
         return CodecParams(
@@ -141,7 +149,13 @@ class ProbedFile:
             channels=self.stream.channels,
         )
 
-    def to_filename_stem(self) -> str:
+    @property
+    def filename_stem(self) -> str:
+        if not self._filename_stem:
+            self._filename_stem = self._make_stem()
+        return self._filename_stem
+
+    def _make_stem(self) -> str:
         metadata = self.metadata
         if not metadata.artist and not metadata.album:
             return self.filename.stem + "_merged"
@@ -150,11 +164,11 @@ class ProbedFile:
         if (grp := metadata.grouping) and grp not in metadata.album:
             stem += f" {grp} -"
         stem += f" {metadata.album}"
-        return stem
+        return escape_filename(stem)
 
     @property
     def matches_prospective_output(self) -> bool:
-        return self.filename.stem == self.to_filename_stem()
+        return self.filename.stem == self.filename_stem
 
 
 @dataclass
