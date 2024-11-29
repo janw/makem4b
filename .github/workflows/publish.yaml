@@ -18,6 +18,12 @@ jobs:
       - name: Install poetry
         run: pipx install poetry
 
+      - name: Set up python environment
+        uses: actions/setup-python@v5
+        with:
+          cache: 'poetry'
+          python-version: "3.12"
+
       - name: Build package
         run: poetry build -vvv
 
