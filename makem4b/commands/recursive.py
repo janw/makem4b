@@ -61,7 +61,7 @@ def cli(
     prefer_remux: bool,
     no_transcode: bool,
     overwrite: bool,
-    cover_regex: re.Pattern,
+    cover_regex: re.Pattern[str],
 ) -> None:
     """Recurse into a directory to make audiobooks within its subdirectories.
 
@@ -121,7 +121,7 @@ def cli(
             pass
 
 
-def filter_files(dirpath: Path, filenames: list[str], regex: re.Pattern) -> dict[str, list[Path]]:
+def filter_files(dirpath: Path, filenames: list[str], regex: re.Pattern[str]) -> dict[str, list[Path]]:
     matches: dict[str, list[Path]] = defaultdict(list)
     for filen in filenames:
         if regex.match(filen):

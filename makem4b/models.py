@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import suppress
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import (
     AliasChoices,
@@ -18,7 +18,7 @@ from makem4b import constants
 from makem4b.utils import escape_ffmetadata, parse_grouping
 
 
-def validate_stream(val: dict, handler: ValidatorFunctionWrapHandler) -> AudioStream | BaseStream | None:
+def validate_stream(val: dict[str, Any], handler: ValidatorFunctionWrapHandler) -> AudioStream | BaseStream | None:
     with suppress(ValidationError):
         return handler(val)
     return None
@@ -45,7 +45,7 @@ class AudioStream(BaseStream):
     channels: int
     duration: float
 
-    side_data_list: list[dict] = []
+    side_data_list: list[dict[str, Any]] = []
 
     @property
     def duration_ts(self) -> int:

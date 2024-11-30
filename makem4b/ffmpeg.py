@@ -5,7 +5,7 @@ import re
 import shlex
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
@@ -15,7 +15,7 @@ from makem4b.utils import TaskProgress, pinfo
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from makem4b.models import CodecParams
+    from makem4b.types import CodecParams
 
 
 FFMPEG_CMD_BIN = "ffmpeg"
@@ -108,12 +108,12 @@ def make_transcoding_args(codec: CodecParams) -> list[str]:
     return TRANSCODE_CMD_ARGS_FREE + codec_args
 
 
-def _poll_for_progress(process: subprocess.Popen) -> Generator[int, None, None]:
+def _poll_for_progress(process: subprocess.Popen[str]) -> Generator[int, None, None]:
     while True:
         if process.stdout is None:
             continue
 
-        stdout_line = process.stdout.readline().decode("utf-8", errors="replace").strip()
+        stdout_line = process.stdout.readline().strip()
         if stdout_line == "" and process.poll() is not None:
             break
 
@@ -121,7 +121,7 @@ def _poll_for_progress(process: subprocess.Popen) -> Generator[int, None, None]:
             yield round(int(match.group(1)) * 10e-7)
 
 
-def _check_result(process: subprocess.Popen | subprocess.CompletedProcess, *, args: list[str]) -> None:
+def _check_result(process: subprocess.Popen[str] | subprocess.CompletedProcess[str], *, args: list[str]) -> None:
     if process.returncode != 0:
         msg = f"Error running command {shlex.join(['ffmpeg']+args)}"
         raise RuntimeError(msg)
@@ -133,7 +133,7 @@ def wrapped_ffmpeg(args: list[str]) -> Generator[int, None, None]:
         FFMPEG_CMD + progress_args + args,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        universal_newlines=False,
+        text=True,
     )
     yield from _poll_for_progress(process)
     _check_result(process, args=args)
@@ -160,7 +160,7 @@ def extract_cover_img(file: Path, *, output: Path) -> None:
     )
 
 
-def probe(file: Path) -> dict:
+def probe(file: Path) -> dict[str, Any]:
     try:
         probe_res = subprocess.check_output(  # noqa: S603
             [

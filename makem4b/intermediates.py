@@ -20,16 +20,24 @@ def generate_intermediates(
 ) -> list[Path]:
     mode, codec = probed.processing_params
     specs_msg = f"({codec.bit_rate/1000:.1f} kBit/s, {codec.sample_rate/1000:.1f} kHz)"
-    if mode == ProcessingMode.REMUX or (mode == ProcessingMode.TRANSCODE_UNIFORM and prefer_remux):
+
+    if mode == ProcessingMode.REMUX:
         pinfo(Emoji.REMUX, "Using input files as-is", specs_msg)
         return [p.filename for p in probed]
 
-    pinfo(Emoji.TRANSCODE, "Transcoding files", specs_msg)
-    args = ffmpeg.make_transcoding_args(codec)
+    if mode == ProcessingMode.TRANSCODE_UNIFORM and prefer_remux:
+        pinfo(Emoji.AVOIDING_TRANSCODE, "Remuxing non-AAC", specs_msg)
+        suffix = ".ts"
+        args = ffmpeg.COPY_CMD_ARGS
+    else:
+        pinfo(Emoji.TRANSCODE, "Transcoding files", specs_msg)
+        suffix = ".aac"
+        args = ffmpeg.make_transcoding_args(codec)
+
     intermediates: list[Path] = []
     with Progress(transient=True, disable=disable_progress) as progress:
-        for idx, file in enumerate(progress.track(probed, description="Transcoding files"), 1):
-            outfilen = tmpdir / f"intermediate_{idx:05d}.aac"
+        for idx, file in enumerate(progress.track(probed, description="Processing files"), 1):
+            outfilen = tmpdir / f"intermediate_{idx:05d}{suffix}"
             intermediates.append(outfilen)
             ffmpeg.convert(
                 [file.filename],

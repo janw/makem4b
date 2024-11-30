@@ -49,23 +49,19 @@ def comma_separated_suffix_list(val: str | list[str]) -> list[str]:
     return ["." + v.lstrip(".") for v in val]
 
 
-def regex_pattern(val: str | re.Pattern) -> re.Pattern:
+def regex_pattern(val: str | re.Pattern[str]) -> re.Pattern[str]:
     if isinstance(val, re.Pattern):
         return val
     return re.compile(val, re.IGNORECASE)
 
 
-re_escape = re.compile(r"([=;#\\\n])")
-
-
 def escape_ffmetadata(val: str) -> str:
+    re_escape = re.compile(r"([=;#\\\n])")
     return re_escape.sub(r"\\\1", val)
 
 
-re_filename = re.compile(r"[/\\?%*:|\"<>\x7F\x00-\x1F]")
-
-
 def escape_filename(val: str) -> str:
+    re_filename = re.compile(r"[/\\?%*:|\"<>\x7F\x00-\x1F]")
     return re_filename.sub("-", val)
 
 
