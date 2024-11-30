@@ -1,3 +1,9 @@
+## v1.1.0 (2024-11-30)
+
+### Feat
+
+- Parse grouping metadata to series+part
+
 ## v1.0.0 (2024-11-30)
 
 ### Feat
