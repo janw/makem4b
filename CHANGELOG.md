@@ -1,3 +1,9 @@
+## v0.5.3 (2024-11-30)
+
+### Fix
+
+- Improve precision of chapter marker timestamps
+
 ## v0.5.2 (2024-11-29)
 
 ### Fix
