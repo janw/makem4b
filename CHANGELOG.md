@@ -1,3 +1,18 @@
+## v1.0.0 (2024-11-30)
+
+### Feat
+
+- Introduce --prefer-remux and --no-transcode
+
+### Fix
+
+- Use a supported AAC sample rate when transcoding
+
+### Refactor
+
+- Parse FFprobe output into model
+- Disable live progress in debug mode
+
 ## v0.6.0 (2024-11-30)
 
 ### Feat
