@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
 
-re_escape = re.compile(r"([=;#\\])")
+re_escape = re.compile(r"([=;#\\\n])")
 re_filename = re.compile(r"[/\\?%*:|\"<>\x7F\x00-\x1F]")
 
 
@@ -52,7 +52,7 @@ class Stream(BaseModel):
 
     @property
     def duration_ts(self) -> int:
-        return int(self.duration * constants.TIMEBASE)
+        return round(self.duration * constants.TIMEBASE)
 
     def __eq__(self, o: object) -> bool:
         if isinstance(o, Stream):

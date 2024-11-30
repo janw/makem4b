@@ -18,7 +18,7 @@ FFMPEG_METADATA_HEADER = ";FFMETADATA1\n"
 def enumerate_timestamped_files(
     probed: ProbeResult,
 ) -> Iterator[tuple[int, int, int, ProbedFile]]:
-    start_ts = 1
+    start_ts = 0
     for idx, file in enumerate(probed):
         end_ts = start_ts + file.stream.duration_ts
         yield idx, start_ts, end_ts, file
