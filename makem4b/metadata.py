@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
 
-    from makem4b.models import ProbedFile, ProbeResult
+    from makem4b.types import ProbedFile, ProbeResult
 
 FFMPEG_METADATA_HEADER = ";FFMETADATA1\n"
 

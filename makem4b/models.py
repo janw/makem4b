@@ -15,7 +15,7 @@ from pydantic import (
 )
 
 from makem4b import constants
-from makem4b.utils import escape_ffmetadata
+from makem4b.utils import escape_ffmetadata, parse_grouping
 
 
 def validate_stream(val: dict, handler: ValidatorFunctionWrapHandler) -> AudioStream | BaseStream | None:
@@ -81,7 +81,11 @@ class Metadata(BaseModel):
     )
     encoder: str = Field("", exclude=True)
     comment: str = ""
-    grouping: str = ""
+    grouping: str = Field(
+        "",
+        validation_alias=AliasChoices("grouping", "GRP1", "TIT1"),
+        serialization_alias="grouping",
+    )
 
     @model_validator(mode="after")
     def sync_fields(self) -> Metadata:
@@ -95,8 +99,11 @@ class Metadata(BaseModel):
         elif self.movement and not self.series_part:
             self.series_part = self.movement
 
-        if not self.grouping and self.series and self.series_part:
+        if self.series and self.series_part:
             self.grouping = f"{self.series} #{self.series_part}"
+        elif self.grouping and (grp_match := parse_grouping(self.grouping)):
+            self.series, self.series_part = grp_match
+            self.movementname, self.movement = grp_match
 
         if self.artist and not self.album_artist:
             self.album_artist = self.artist

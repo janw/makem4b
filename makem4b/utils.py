@@ -67,3 +67,10 @@ re_filename = re.compile(r"[/\\?%*:|\"<>\x7F\x00-\x1F]")
 
 def escape_filename(val: str) -> str:
     return re_filename.sub("-", val)
+
+
+def parse_grouping(val: str) -> tuple[str, str] | None:
+    re_grouping = re.compile(r"^(?P<series>.+) #(?P<part>\d+(\.\d+)?)")
+    if match := re_grouping.match(val):
+        return match.group("series"), match.group("part")
+    return None
