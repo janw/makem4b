@@ -1,3 +1,9 @@
+## v0.6.0 (2024-11-30)
+
+### Feat
+
+- Merge cover into file in recursive mode
+
 ## v0.5.3 (2024-11-30)
 
 ### Fix
