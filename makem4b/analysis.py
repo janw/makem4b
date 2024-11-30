@@ -8,7 +8,8 @@ from rich.table import Table
 
 from makem4b import constants, ffmpeg
 from makem4b.emoji import Emoji
-from makem4b.models import FFProbeOutput, ProbedFile, ProbeResult, ProcessingMode
+from makem4b.models import FFProbeOutput
+from makem4b.types import ProbedFile, ProbeResult, ProcessingMode
 from makem4b.utils import pinfo
 
 if TYPE_CHECKING:

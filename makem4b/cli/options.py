@@ -19,19 +19,39 @@ PROCESSING_OPTIONS: list[click.Parameter] = [
     ),
     click.Option(
         [
-            "-t",
-            "--avoid-transcode",
+            "-r",
+            "--prefer-remux",
         ],
         type=bool,
         is_flag=True,
         show_envvar=True,
         help="""
-            Avoid transcoding the input files to create the audiobook. MAKEM4B will not
-            attempt to convert the files to produce the audiobook but instead use them
-            as-is and simply concatenate them in their original format. Since no
-            conversion will take place this option will preserve the full quality of the
-            input material. **Requires all files to be using the same format** (codec,
-            sample rate, bit rate, and number of channels).
+            Avoid transcoding the input files to create the audiobook **when files are
+            of the same format** (codec, sample rate, bit rate, and number of channels)
+            but not an AAC M4B. MAKEM4B will not attempt to convert the files to produce
+            an audiobook but instead use them as-is and simply concatenate them in their
+            original format. Since no conversion will take place this option will
+            preserve the full quality of the input material.
+
+            Combine with `--no-transcode` to create audiobooks with original quality
+            whenever possible but do nothing when transcoding would be required.
+        """,
+    ),
+    click.Option(
+        [
+            "-T",
+            "--no-transcode",
+        ],
+        type=bool,
+        is_flag=True,
+        show_envvar=True,
+        help="""
+            Reject transcoding the input files to create the audiobook outright. MAKEM4B
+            will not attempt to convert the files to produce the audiobook. If all files
+            are using the same format (codec, sample rate, average bit rate, and number
+            of channels), an audiobook will be created by concatenating the audio data,
+            preserving the full quality of the input material. If files vary or use a
+            variable bitrate (VBR), the processing will be aborted.
         """,
     ),
     click.Option(

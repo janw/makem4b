@@ -12,6 +12,7 @@ from makem4b.cli.decorators import add_processing_options, pass_ctx_and_env
 from makem4b.emoji import Emoji
 from makem4b.intermediates import generate_concat_file, generate_intermediates
 from makem4b.metadata import extract_cover_img, generate_metadata
+from makem4b.types import ProcessingMode
 from makem4b.utils import copy_mtime, pinfo
 
 if TYPE_CHECKING:
@@ -52,7 +53,8 @@ def cli(
     files: list[Path],
     move_originals_to: Path | None,
     analyze_only: bool,
-    avoid_transcode: bool,
+    prefer_remux: bool,
+    no_transcode: bool,
     overwrite: bool,
     cover: Path | None,
 ) -> None:
@@ -71,7 +73,8 @@ def cli(
         files=files,
         move_originals_to=move_originals_to,
         analyze_only=analyze_only,
-        avoid_transcode=avoid_transcode,
+        prefer_remux=prefer_remux,
+        no_transcode=no_transcode,
         overwrite=overwrite,
         cover=cover,
     )
@@ -84,7 +87,8 @@ def process(
     files: list[Path],
     move_originals_to: Path | None,
     analyze_only: bool,
-    avoid_transcode: bool,
+    prefer_remux: bool,
+    no_transcode: bool,
     overwrite: bool,
     cover: Path | None = None,
 ) -> None:
@@ -93,11 +97,15 @@ def process(
         print_probe_result(result)
         raise Exit(0)
 
-    output = generate_output_filename(result, avoid_transcode=avoid_transcode, overwrite=overwrite)
+    if no_transcode and result.processing_params[0] == ProcessingMode.TRANSCODE_MIXED:
+        pinfo(Emoji.STOP, "Files require transcode. Bailing.")
+        raise Exit(8)
+
+    output = generate_output_filename(result, prefer_remux=prefer_remux, overwrite=overwrite)
 
     with handle_temp_storage(result, keep=env.keep_intermediates) as tmpdir:
         intermediates = generate_intermediates(
-            result, tmpdir=tmpdir, avoid_transcode=avoid_transcode, disable_progress=env.debug
+            result, tmpdir=tmpdir, prefer_remux=prefer_remux, disable_progress=env.debug
         )
         concat_file = generate_concat_file(intermediates, tmpdir=tmpdir)
         metadata_file = generate_metadata(result, tmpdir=tmpdir)

@@ -58,7 +58,8 @@ def cli(
     move_originals_to: Path | None,
     types: list[str],
     analyze_only: bool,
-    avoid_transcode: bool,
+    prefer_remux: bool,
+    no_transcode: bool,
     overwrite: bool,
     cover_regex: re.Pattern,
 ) -> None:
@@ -111,7 +112,8 @@ def cli(
                 files=seen_files,
                 move_originals_to=move_originals_to,
                 analyze_only=analyze_only,
-                avoid_transcode=avoid_transcode,
+                prefer_remux=prefer_remux,
+                no_transcode=no_transcode,
                 overwrite=overwrite,
                 cover=cover_file,
             )

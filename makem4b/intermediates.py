@@ -6,21 +6,21 @@ from rich.progress import Progress
 
 from makem4b import ffmpeg
 from makem4b.emoji import Emoji
-from makem4b.models import ProcessingMode
+from makem4b.types import ProcessingMode
 from makem4b.utils import TaskProgress, escape_concat_filename, pinfo
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from makem4b.models import ProbeResult
+    from makem4b.types import ProbeResult
 
 
 def generate_intermediates(
-    probed: ProbeResult, *, tmpdir: Path, avoid_transcode: bool, disable_progress: bool = False
+    probed: ProbeResult, *, tmpdir: Path, prefer_remux: bool, disable_progress: bool = False
 ) -> list[Path]:
     mode, codec = probed.processing_params
     specs_msg = f"({codec.bit_rate/1000:.1f} kBit/s, {codec.sample_rate/1000:.1f} kHz)"
-    if mode == ProcessingMode.REMUX or mode == ProcessingMode.TRANSCODE_UNIFORM and avoid_transcode:
+    if mode == ProcessingMode.REMUX or (mode == ProcessingMode.TRANSCODE_UNIFORM and prefer_remux):
         pinfo(Emoji.REMUX, "Using input files as-is", specs_msg)
         return [p.filename for p in probed]
 
@@ -28,8 +28,8 @@ def generate_intermediates(
     args = ffmpeg.make_transcoding_args(codec)
     intermediates: list[Path] = []
     with Progress(transient=True, disable=disable_progress) as progress:
-        for file in progress.track(probed, description="Transcoding files"):
-            outfilen = tmpdir / (file.filename.stem + ".intermed.aac")
+        for idx, file in enumerate(progress.track(probed, description="Transcoding files"), 1):
+            outfilen = tmpdir / f"intermediate_{idx:05d}.aac"
             intermediates.append(outfilen)
             ffmpeg.convert(
                 [file.filename],

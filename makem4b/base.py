@@ -11,7 +11,7 @@ from rich.progress import Progress, track
 
 from makem4b import constants, ffmpeg
 from makem4b.emoji import Emoji
-from makem4b.models import ProbeResult, ProcessingMode
+from makem4b.types import ProbeResult, ProcessingMode
 from makem4b.utils import TaskProgress, pinfo
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ CACHEDIR_TAG = "CACHEDIR.TAG"
 
 @contextmanager
 def handle_temp_storage(result: ProbeResult, *, keep: bool) -> Generator[Path, None, None]:
-    tmpdir = result.first.filename.parent / "makem4b.tmp"
+    tmpdir = result.first.filename.parent / "makem4b_tmpdir"
     tmpdir.mkdir(exist_ok=True)
     (tmpdir / CACHEDIR_TAG).touch()
     try:
@@ -45,10 +45,10 @@ def move_files(result: ProbeResult, target_path: Path, subdir: str) -> None:
         shutil.move(file.filename, file_target)
 
 
-def generate_output_filename(result: ProbeResult, *, avoid_transcode: bool, overwrite: bool) -> Path:
+def generate_output_filename(result: ProbeResult, *, prefer_remux: bool, overwrite: bool) -> Path:
     mode, _ = result.processing_params
     ext = ".m4b"
-    if mode == ProcessingMode.TRANSCODE_UNIFORM and avoid_transcode:
+    if mode == ProcessingMode.TRANSCODE_UNIFORM and prefer_remux:
         ext = result.first.filename.suffix
         pinfo(Emoji.AVOIDING_TRANSCODE, f"Avoiding transcode, saving as {ext}")
     elif mode == ProcessingMode.TRANSCODE_MIXED:
