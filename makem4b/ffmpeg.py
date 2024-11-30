@@ -54,6 +54,7 @@ COPY_CMD_ARGS = [
     "0",
     "-muxdelay",
     "0",
+    "-vn",
 ]
 CONCAT_CMD_ARGS = [
     "-c:a",
@@ -72,12 +73,12 @@ CONCAT_AAC_ADDED_ARGS = [
 
 CONCAT_APPEND_COVER_ADDED_ARGS = [
     "-c:v",
-    "copy",
+    "mjpeg",
     "-map",
     "0:a",
     "-map",
     "2:v",
-    "-disposition:2",
+    "-disposition:1",
     "attached_pic",
     "-metadata:s:v",
     'title="Album cover"',
@@ -106,6 +107,7 @@ def make_transcoding_args(codec: CodecParams) -> list[str]:
         str(codec.sample_rate),
         "-b:a",
         str(min(codec.bit_rate, TRANSCODE_MAX_BITRATE)),
+        "-vn",
     ]
 
     version_output = subprocess.check_output(  # noqa: S603
