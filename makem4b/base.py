@@ -64,10 +64,12 @@ def generate_output_filename(result: ProbeResult, *, avoid_transcode: bool, over
 
 def merge(
     concat_file: Path,
+    *,
     metadata_file: Path,
     output: Path,
     total_duration: int,
     cover_file: Path | None = None,
+    disable_progress: bool = False,
 ) -> None:
     pinfo(Emoji.MERGE, "Merging to audiobook")
     args = ffmpeg.CONCAT_CMD_ARGS.copy()
@@ -76,7 +78,7 @@ def merge(
         args += ffmpeg.CONCAT_APPEND_COVER_ADDED_ARGS
         inputs.append(cover_file)
     try:
-        with Progress(transient=True) as progress:
+        with Progress(transient=True, disable=disable_progress) as progress:
             ffmpeg.concat(
                 inputs,
                 args,

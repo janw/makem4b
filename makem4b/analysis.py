@@ -40,7 +40,7 @@ def _probe_file(file: Path) -> ProbedFile:
     )
 
 
-def probe_files(files_to_probe: list[Path]) -> ProbeResult:
+def probe_files(files_to_probe: list[Path], *, disable_progress: bool = False) -> ProbeResult:
     pinfo(Emoji.ANALYZE, f"Analyzing {len(files_to_probe)} files")
     return ProbeResult(
         files=[
@@ -49,6 +49,7 @@ def probe_files(files_to_probe: list[Path]) -> ProbeResult:
                 sorted(files_to_probe),
                 description="Analyzing",
                 transient=True,
+                disable=disable_progress,
             )
         ],
     )

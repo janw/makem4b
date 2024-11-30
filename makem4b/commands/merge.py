@@ -88,7 +88,7 @@ def process(
     overwrite: bool,
     cover: Path | None = None,
 ) -> None:
-    result = probe_files(files)
+    result = probe_files(files, disable_progress=env.debug)
     if analyze_only:
         print_probe_result(result)
         raise Exit(0)
@@ -96,7 +96,9 @@ def process(
     output = generate_output_filename(result, avoid_transcode=avoid_transcode, overwrite=overwrite)
 
     with handle_temp_storage(result, keep=env.keep_intermediates) as tmpdir:
-        intermediates = generate_intermediates(result, tmpdir=tmpdir, avoid_transcode=avoid_transcode)
+        intermediates = generate_intermediates(
+            result, tmpdir=tmpdir, avoid_transcode=avoid_transcode, disable_progress=env.debug
+        )
         concat_file = generate_concat_file(intermediates, tmpdir=tmpdir)
         metadata_file = generate_metadata(result, tmpdir=tmpdir)
         cover_file = cover or extract_cover_img(result, tmpdir=tmpdir)
@@ -107,6 +109,7 @@ def process(
             cover_file=cover_file,
             total_duration=result.total_duration,
             output=output,
+            disable_progress=env.debug,
         )
 
     copy_mtime(result.first.filename, output)

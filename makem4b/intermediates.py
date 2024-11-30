@@ -15,7 +15,9 @@ if TYPE_CHECKING:
     from makem4b.models import ProbeResult
 
 
-def generate_intermediates(probed: ProbeResult, *, tmpdir: Path, avoid_transcode: bool) -> list[Path]:
+def generate_intermediates(
+    probed: ProbeResult, *, tmpdir: Path, avoid_transcode: bool, disable_progress: bool = False
+) -> list[Path]:
     mode, codec = probed.processing_params
     specs_msg = f"({codec.bit_rate:.1f} kBit/s, {codec.sample_rate:.1f} kHz)"
     if mode == ProcessingMode.REMUX or mode == ProcessingMode.TRANSCODE_UNIFORM and avoid_transcode:
@@ -25,7 +27,7 @@ def generate_intermediates(probed: ProbeResult, *, tmpdir: Path, avoid_transcode
     pinfo(Emoji.TRANSCODE, "Transcoding files", specs_msg)
     args = ffmpeg.make_transcoding_args(codec)
     intermediates: list[Path] = []
-    with Progress(transient=True) as progress:
+    with Progress(transient=True, disable=disable_progress) as progress:
         for file in progress.track(probed, description="Transcoding files"):
             outfilen = tmpdir / (file.filename.stem + ".intermed.aac")
             intermediates.append(outfilen)
