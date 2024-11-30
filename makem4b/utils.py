@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import os
 import re
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rich import get_console
+from rich.progress import Progress
 
 from makem4b.emoji import Emoji
 

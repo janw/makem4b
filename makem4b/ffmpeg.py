@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
+from makem4b import constants
 from makem4b.emoji import Emoji
 from makem4b.utils import TaskProgress, pinfo
 
@@ -44,6 +45,16 @@ TRANSCODE_CMD_ARGS_FREE = [
 ]
 TRANSCODE_MAX_BITRATE = 192000
 
+COPY_CMD_ARGS = [
+    "-c:a",
+    "copy",
+    "-map",
+    "0:a",
+    "-muxpreload",
+    "0",
+    "-muxdelay",
+    "0",
+]
 CONCAT_CMD_ARGS = [
     "-c:a",
     "copy",
@@ -74,7 +85,7 @@ CONCAT_APPEND_COVER_ADDED_ARGS = [
     'comment="Cover (front)"',
 ]
 
-re_progress = re.compile(r"^out_time_ms=(\d+)")
+re_progress = re.compile(r"^total_size=(\d+)")
 
 
 def _make_input_args(inputs: list[Path | str] | Path | str) -> list[str]:
@@ -108,20 +119,20 @@ def make_transcoding_args(codec: CodecParams) -> list[str]:
     return TRANSCODE_CMD_ARGS_FREE + codec_args
 
 
-def _poll_for_progress(process: subprocess.Popen[str]) -> Generator[int, None, None]:
+def _poll_for_progress(process: subprocess.Popen[bytes]) -> Generator[int, None, None]:
     while True:
         if process.stdout is None:
             continue
 
-        stdout_line = process.stdout.readline().strip()
+        stdout_line = process.stdout.readline().decode("utf-8", errors="replace").strip()
         if stdout_line == "" and process.poll() is not None:
             break
 
         if match := re_progress.search(stdout_line):
-            yield round(int(match.group(1)) * 10e-7)
+            yield round(int(match.group(1)))
 
 
-def _check_result(process: subprocess.Popen[str] | subprocess.CompletedProcess[str], *, args: list[str]) -> None:
+def _check_result(process: subprocess.Popen[bytes] | subprocess.CompletedProcess[bytes], *, args: list[str]) -> None:
     if process.returncode != 0:
         msg = f"Error running command {shlex.join(['ffmpeg']+args)}"
         raise RuntimeError(msg)
@@ -133,7 +144,7 @@ def wrapped_ffmpeg(args: list[str]) -> Generator[int, None, None]:
         FFMPEG_CMD + progress_args + args,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        text=True,
+        text=False,
     )
     yield from _poll_for_progress(process)
     _check_result(process, args=args)
@@ -181,6 +192,21 @@ def probe(file: Path) -> dict[str, Any]:
     except subprocess.CalledProcessError as exc:
         msg = f"File {file} could not be parsed: {exc.stderr.decode()}"
         raise RuntimeError(msg) from exc
+
+
+def probe_duration(file: Path) -> int:
+    probe_res = subprocess.check_output(  # noqa: S603
+        [
+            *FFPROBE_CMD,
+            *_make_input_args(file),
+            "-output_format",
+            "csv=p=0",
+            "-show_entries",
+            "format=duration",
+        ],
+        text=True,
+    )
+    return round(float(probe_res) * constants.TIMEBASE)
 
 
 def convert(inputs: list[Path | str], args: list[str], *, output: Path, progress: TaskProgress) -> None:

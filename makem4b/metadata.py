@@ -15,22 +15,20 @@ if TYPE_CHECKING:
 FFMPEG_METADATA_HEADER = ";FFMETADATA1\n"
 
 
-def enumerate_timestamped_files(
-    probed: ProbeResult,
-) -> Iterator[tuple[int, int, int, ProbedFile]]:
+def enumerate_timestamped_files(durations: list[int]) -> Iterator[tuple[int, int, int]]:
     start_ts = 0
-    for idx, file in enumerate(probed):
-        end_ts = start_ts + file.stream.duration_ts
-        yield idx, start_ts, end_ts, file
+    for idx, duration_ts in enumerate(durations):
+        end_ts = start_ts + duration_ts
+        yield idx, start_ts, end_ts
         start_ts = end_ts + 1
 
 
-def generate_metadata(probed: ProbeResult, *, tmpdir: Path) -> Path:
+def generate_metadata(files: list[ProbedFile], *, durations: list[int], tmpdir: Path) -> Path:
     pinfo(Emoji.METADATA, "Generating metadata and chapters")
     metadata_file = tmpdir / "metadata.txt"
     with metadata_file.open("w") as fh:
         fh.write(FFMPEG_METADATA_HEADER)
-        for idx, start_ts, end_ts, file in enumerate_timestamped_files(probed):
+        for (idx, start_ts, end_ts), file in zip(enumerate_timestamped_files(durations), files, strict=True):
             if idx == 0:
                 fh.write(file.metadata.to_tags())
             fh.write(file.metadata.to_chapter(start_ts, end_ts))

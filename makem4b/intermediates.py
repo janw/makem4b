@@ -17,39 +17,42 @@ if TYPE_CHECKING:
 
 def generate_intermediates(
     probed: ProbeResult, *, tmpdir: Path, prefer_remux: bool, disable_progress: bool = False
-) -> list[Path]:
+) -> tuple[list[Path], list[int]]:
     mode, codec = probed.processing_params
     specs_msg = f"({codec.bit_rate/1000:.1f} kBit/s, {codec.sample_rate/1000:.1f} kHz)"
 
     if mode == ProcessingMode.REMUX:
         pinfo(Emoji.REMUX, "Using input files as-is", specs_msg)
-        return [p.filename for p in probed]
+        return [f.filename for f in probed.files], [f.stream.duration_ts for f in probed.files]
 
-    if mode == ProcessingMode.TRANSCODE_UNIFORM and prefer_remux:
-        pinfo(Emoji.AVOIDING_TRANSCODE, "Remuxing non-AAC", specs_msg)
-        suffix = ".ts"
+    if mode == ProcessingMode.REMUX_FIX_DTS or (mode == ProcessingMode.TRANSCODE_UNIFORM and prefer_remux):
+        pinfo(Emoji.AVOIDING_TRANSCODE, "Remuxing", specs_msg)
         args = ffmpeg.COPY_CMD_ARGS
     else:
         pinfo(Emoji.TRANSCODE, "Transcoding files", specs_msg)
-        suffix = ".aac"
         args = ffmpeg.make_transcoding_args(codec)
 
     intermediates: list[Path] = []
+    durations: list[int] = []
     with Progress(transient=True, disable=disable_progress) as progress:
         for idx, file in enumerate(progress.track(probed, description="Processing files"), 1):
-            outfilen = tmpdir / f"intermediate_{idx:05d}{suffix}"
-            intermediates.append(outfilen)
+            outfilen = tmpdir / f"intermediate_{idx:05d}.ts"
             ffmpeg.convert(
                 [file.filename],
                 args,
                 output=outfilen,
                 progress=TaskProgress.make(
                     progress,
-                    total=round(file.stream.duration),
+                    # FFmpeg does not report out_time when writing mpeg2ts, so we're
+                    # falling back to a very crude approximation of progress via total_size.
+                    total=1.1 * file.stream.approx_size,
                     description=file.filename.name,
                 ),
             )
-    return intermediates
+            duration_ts = ffmpeg.probe_duration(outfilen)
+            intermediates.append(outfilen)
+            durations.append(duration_ts)
+    return intermediates, durations
 
 
 def generate_concat_file(intermediates: list[Path], *, tmpdir: Path) -> Path:

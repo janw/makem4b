@@ -28,6 +28,7 @@ CmdOption = Callable[[Cmd], Cmd]
 
 class ProcessingMode(StrEnum):
     REMUX = "Remux"
+    REMUX_FIX_DTS = "Remux and fix DTS"  # TODO: implement
     TRANSCODE_UNIFORM = "Transcode Uniform"
     TRANSCODE_MIXED = "Transcode Mixed"
 
@@ -167,8 +168,8 @@ class ProbeResult:
         return self.files[0]
 
     @property
-    def total_duration(self) -> int:
-        return round(sum(f.stream.duration for f in self))
+    def approx_size(self) -> int:
+        return sum(f.stream.approx_size for f in self)
 
     def __iter__(self) -> Iterator[ProbedFile]:
         yield from self.files

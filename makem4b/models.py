@@ -51,6 +51,11 @@ class AudioStream(BaseStream):
     def duration_ts(self) -> int:
         return round(self.duration * constants.TIMEBASE)
 
+    @property
+    def approx_size(self) -> int:
+        bps = self.bit_rate / 8
+        return round(self.duration * bps)
+
     def __eq__(self, o: object) -> bool:
         if isinstance(o, AudioStream):
             return self.codec_name == o.codec_name and self.sample_rate == o.sample_rate and self.channels == o.channels
@@ -142,7 +147,7 @@ StreamOrNone = Annotated[AudioStream | BaseStream | None, WrapValidator(validate
 
 
 class FFProbeFormat(BaseModel):
-    tags: Metadata
+    tags: Metadata = Metadata()
 
 
 class FFProbeOutput(BaseModel):

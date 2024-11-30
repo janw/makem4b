@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING
 import rich_click as click
 from click.exceptions import Exit
 
+from makem4b.base import process
 from makem4b.cli.decorators import add_processing_options, pass_ctx_and_env
-from makem4b.commands.merge import process as merge_process
 from makem4b.emoji import Emoji
 from makem4b.utils import comma_separated_suffix_list, pinfo, regex_pattern
 
@@ -106,8 +106,7 @@ def cli(
         cover_file = next((dirpath / f for f in filenames if cover_regex.match(f)), None)
         try:
             pinfo(Emoji.INFO, f"Processing {dirpath.relative_to(env.cwd)}")
-            merge_process(
-                ctx=ctx,
+            process(
                 env=env,
                 files=seen_files,
                 move_originals_to=move_originals_to,
