@@ -11,7 +11,7 @@ from click.exceptions import Exit
 from makem4b.cli.decorators import add_processing_options, pass_ctx_and_env
 from makem4b.commands.merge import process as merge_process
 from makem4b.emoji import Emoji
-from makem4b.utils import comma_separated_suffix_list, pinfo
+from makem4b.utils import comma_separated_suffix_list, pinfo, regex_pattern
 
 if TYPE_CHECKING:
     from makem4b.cli.env import Environment
@@ -30,11 +30,22 @@ if TYPE_CHECKING:
     ),
 )
 @click.option(
-    "-rt",
-    "--recursive-types",
+    "-t",
+    "--types",
     type=comma_separated_suffix_list,
     default=[".m4a", ".mp3"],
     help="""Filename extensions to be considered.""",
+    show_default=True,
+)
+@click.option(
+    "-c",
+    "--cover-regex",
+    type=regex_pattern,
+    default=r"^cover\.(jpe?g|png)$",
+    help="""
+        Regular expression to use to find a matching cover image file. If merging of
+        cover files it not desired, pass `^$` (effectively matching files with no name).
+    """,
     show_default=True,
 )
 @add_processing_options
@@ -45,10 +56,11 @@ def cli(
     *,
     directory: Path,
     move_originals_to: Path | None,
-    recursive_types: list[str],
+    types: list[str],
     analyze_only: bool,
     avoid_transcode: bool,
     overwrite: bool,
+    cover_regex: re.Pattern,
 ) -> None:
     """Recurse into a directory to make audiobooks within its subdirectories.
 
@@ -60,7 +72,7 @@ def cli(
     Unless `--overwrite` is passed as well, MAKEM4B will attempt to act in an idempotent manner: if a given directory
     already contains a file with the prospective output filename, it will skip the directory.
     """
-    suffixes = "|".join(re.escape(suff) for suff in recursive_types)
+    suffixes = "|".join(re.escape(suff) for suff in types)
     re_types = re.compile(rf"^.+({suffixes})$")
 
     if not directory:
@@ -70,6 +82,7 @@ def cli(
 
     for dirpath, _, filenames in directory.walk():
         matches = filter_files(dirpath=dirpath, filenames=filenames, regex=re_types)
+        filenames.sort()
 
         seen_types = list(matches.keys())
         if (type_cnt := len(seen_types)) > 1:
@@ -81,7 +94,7 @@ def cli(
         elif type_cnt < 1:
             continue
 
-        seen_files = sorted(matches[seen_types[0]])
+        seen_files = matches[seen_types[0]]
         if len(seen_files) < 2:
             pinfo(
                 Emoji.STOP,
@@ -89,6 +102,7 @@ def cli(
             )
             continue
 
+        cover_file = next((dirpath / f for f in filenames if cover_regex.match(f)), None)
         try:
             pinfo(Emoji.INFO, f"Processing {dirpath.relative_to(env.cwd)}")
             merge_process(
@@ -99,6 +113,7 @@ def cli(
                 analyze_only=analyze_only,
                 avoid_transcode=avoid_transcode,
                 overwrite=overwrite,
+                cover=cover_file,
             )
         except Exit:
             pass

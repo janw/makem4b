@@ -47,3 +47,9 @@ def comma_separated_suffix_list(val: str | list[str]) -> list[str]:
     if isinstance(val, str):
         val = val.split(",")
     return ["." + v.lstrip(".") for v in val]
+
+
+def regex_pattern(val: str | re.Pattern) -> re.Pattern:
+    if isinstance(val, re.Pattern):
+        return val
+    return re.compile(val, re.IGNORECASE)
