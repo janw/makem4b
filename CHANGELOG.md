@@ -1,3 +1,9 @@
+## v1.1.2 (2024-11-30)
+
+### Fix
+
+- Extract cover image from webp
+
 ## v1.1.1 (2024-11-30)
 
 ### Fix
