@@ -1,3 +1,9 @@
+## v1.1.1 (2024-11-30)
+
+### Fix
+
+- Fix broken chapter timestamps by always remuxing to TS
+
 ## v1.1.0 (2024-11-30)
 
 ### Feat
