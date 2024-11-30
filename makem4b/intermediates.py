@@ -19,7 +19,7 @@ def generate_intermediates(
     probed: ProbeResult, *, tmpdir: Path, avoid_transcode: bool, disable_progress: bool = False
 ) -> list[Path]:
     mode, codec = probed.processing_params
-    specs_msg = f"({codec.bit_rate:.1f} kBit/s, {codec.sample_rate:.1f} kHz)"
+    specs_msg = f"({codec.bit_rate/1000:.1f} kBit/s, {codec.sample_rate/1000:.1f} kHz)"
     if mode == ProcessingMode.REMUX or mode == ProcessingMode.TRANSCODE_UNIFORM and avoid_transcode:
         pinfo(Emoji.REMUX, "Using input files as-is", specs_msg)
         return [p.filename for p in probed]

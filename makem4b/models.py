@@ -2,11 +2,21 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+from contextlib import suppress
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Annotated, Literal, NamedTuple
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    ValidatorFunctionWrapHandler,
+    WrapValidator,
+    model_validator,
+)
 
 from makem4b import constants
 from makem4b.emoji import Emoji
@@ -28,6 +38,12 @@ def escape_filename(val: str) -> str:
     return re_filename.sub("-", val)
 
 
+def validate_stream(val: dict, handler: ValidatorFunctionWrapHandler) -> AudioStream | BaseStream | None:
+    with suppress(ValidationError):
+        return handler(val)
+    return None
+
+
 class ProcessingMode(StrEnum):
     REMUX = "Remux"
     TRANSCODE_UNIFORM = "Transcode Uniform"
@@ -41,21 +57,35 @@ class CodecParams(NamedTuple):
     channels: int
 
 
-class Stream(BaseModel):
+class _StreamDisposition(BaseModel):
+    attached_pic: int = 0
+
+
+class BaseStream(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
+    disposition: _StreamDisposition = _StreamDisposition()
+    codec_type: str
+
+
+class AudioStream(BaseStream):
+    model_config = ConfigDict(extra="ignore")
+
+    codec_type: Literal["audio"]
     codec_name: str
     sample_rate: float
     bit_rate: float
     channels: int
     duration: float
 
+    side_data_list: list[dict] = []
+
     @property
     def duration_ts(self) -> int:
         return round(self.duration * constants.TIMEBASE)
 
     def __eq__(self, o: object) -> bool:
-        if isinstance(o, Stream):
+        if isinstance(o, AudioStream):
             return self.codec_name == o.codec_name and self.sample_rate == o.sample_rate and self.channels == o.channels
         return super().__eq__(o)
 
@@ -76,7 +106,13 @@ class Metadata(BaseModel):
     series_part: str = Field("", alias="SERIES-PART")
     movementname: str = Field("", alias="MOVEMENTNAME")
     movement: str = Field("", alias="MOVEMENT")
-    subtitle: str = Field("", validation_alias="SUBTITLE", serialization_alias="TIT3")
+    narrated_by: str = Field("", alias="NARRATEDBY")
+    subtitle: str = Field(
+        "",
+        validation_alias=AliasChoices("TIT3", "SUBTITLE"),
+        serialization_alias="TIT3",
+    )
+    encoder: str = Field("", exclude=True)
     comment: str = ""
     grouping: str = ""
 
@@ -128,32 +164,60 @@ class Metadata(BaseModel):
         return "\n" + "\n".join(props) + "\n"
 
 
+StreamOrNone = Annotated[AudioStream | BaseStream | None, WrapValidator(validate_stream)]
+
+
+class FFProbeFormat(BaseModel):
+    tags: Metadata
+
+
+class FFProbeOutput(BaseModel):
+    streams: list[StreamOrNone] = []
+    format_: FFProbeFormat = Field(alias="format")
+
+
 @dataclass
 class ProbedFile:
     filename: Path
-    stream_idx: int
-
-    stream: Stream
+    stream: AudioStream
     metadata: Metadata
+    has_cover: bool
+    output_filename_stem: str = field(init=False)
 
-    has_cover: bool = False
+    @classmethod
+    def from_ffmpeg_probe_output(cls, data: FFProbeOutput, *, file: Path) -> ProbedFile:
+        has_cover = False
+        audio = None
+        for stream in data.streams:
+            if not stream:
+                continue
+            if isinstance(stream, AudioStream):
+                audio = stream
+            elif stream.codec_type == "video" and bool(stream.disposition.attached_pic):
+                has_cover = True
 
-    _filename_stem: str = ""
+        if not audio:
+            msg = f"File {file} contains no usable audio stream"
+            raise ValueError(msg)
+
+        return cls(
+            filename=file,
+            stream=audio,
+            metadata=data.format_.tags,
+            has_cover=has_cover,
+        )
+
+    def __post_init__(self) -> None:
+        self.output_filename_stem = self._make_stem()
 
     @property
     def codec_params(self) -> CodecParams:
         return CodecParams(
             codec_name=self.stream.codec_name,
-            sample_rate=round(self.stream.sample_rate / 1000, 1),
-            bit_rate=round(self.stream.bit_rate / 1000, 1),
+            sample_rate=round(self.stream.sample_rate, 1),
+            bit_rate=round(self.stream.bit_rate, 1),
             channels=self.stream.channels,
         )
-
-    @property
-    def filename_stem(self) -> str:
-        if not self._filename_stem:
-            self._filename_stem = self._make_stem()
-        return self._filename_stem
 
     def _make_stem(self) -> str:
         metadata = self.metadata
@@ -168,7 +232,7 @@ class ProbedFile:
 
     @property
     def matches_prospective_output(self) -> bool:
-        return self.filename.stem == self.filename_stem
+        return self.filename.stem == self.output_filename_stem
 
 
 @dataclass

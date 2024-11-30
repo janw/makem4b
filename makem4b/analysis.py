@@ -8,7 +8,7 @@ from rich.table import Table
 
 from makem4b import constants, ffmpeg
 from makem4b.emoji import Emoji
-from makem4b.models import Metadata, ProbedFile, ProbeResult, ProcessingMode, Stream
+from makem4b.models import FFProbeOutput, ProbedFile, ProbeResult, ProcessingMode
 from makem4b.utils import pinfo
 
 if TYPE_CHECKING:
@@ -16,28 +16,9 @@ if TYPE_CHECKING:
 
 
 def _probe_file(file: Path) -> ProbedFile:
-    media = ffmpeg.probe(file)
-    has_cover = False
-    audio = None
-    for idx, stream in enumerate(media.get("streams", [])):
-        if (ctype := stream.get("codec_type", "")) == "audio":
-            audio = (idx, stream)
-        elif ctype == "video" and bool(stream.get("disposition", {}).get("attached_pic", 0)):
-            has_cover = True
-
-    if not audio:
-        msg = f"File {file} contains no usable audio stream"
-        raise ValueError(msg)
-
-    return ProbedFile(
-        filename=file,
-        stream_idx=audio[0],
-        stream=Stream.model_validate(audio[1]),
-        metadata=Metadata.model_validate_strings(
-            media.get("format", {}).get("tags", {}),
-        ),
-        has_cover=has_cover,
-    )
+    output = ffmpeg.probe(file)
+    ffprobed = FFProbeOutput.model_validate(output, context={"file": file})
+    return ProbedFile.from_ffmpeg_probe_output(ffprobed, file=file)
 
 
 def probe_files(files_to_probe: list[Path], *, disable_progress: bool = False) -> ProbeResult:
@@ -67,13 +48,13 @@ def print_probe_result(probed: ProbeResult) -> None:
         "Bit Rate",
         justify="right",
         no_wrap=True,
-        footer=f"{codec.bit_rate:.1f} kBit/s",
+        footer=f"{codec.bit_rate/1000:.1f} kBit/s",
     )
     table.add_column(
         "Sample Rate",
         justify="right",
         no_wrap=True,
-        footer=f"{codec.sample_rate:.1f} kHz",
+        footer=f"{codec.sample_rate/1000:.1f} kHz",
     )
     table.add_column(
         "Channels",
@@ -94,8 +75,8 @@ def print_probe_result(probed: ProbeResult) -> None:
     for codec, files in probed.seen_codecs.items():
         table.add_row(
             codec.codec_name,
-            f"{codec.bit_rate:.1f} kBit/s",
-            f"{codec.sample_rate:.1f} kHz",
+            f"{codec.bit_rate/1000:.1f} kBit/s",
+            f"{codec.sample_rate/1000:.1f} kHz",
             f"{codec.channels:d}",
             "\n".join(str(f.relative_to(constants.CWD)) for f in files),
         )

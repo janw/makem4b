@@ -92,9 +92,9 @@ def _make_input_args(inputs: list[Path | str] | Path | str) -> list[str]:
 def make_transcoding_args(codec: CodecParams) -> list[str]:
     codec_args = [
         "-ar",
-        str(codec.sample_rate * 1000),
+        str(codec.sample_rate),
         "-b:a",
-        str(min(codec.bit_rate * 1000, TRANSCODE_MAX_BITRATE)),
+        str(min(codec.bit_rate, TRANSCODE_MAX_BITRATE)),
     ]
 
     version_output = subprocess.check_output(  # noqa: S603
