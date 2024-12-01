@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum
-from statistics import variance
+from statistics import mean
 from typing import TYPE_CHECKING, NamedTuple
 
 from makem4b import constants
@@ -111,13 +111,42 @@ class ProbedFile:
 class ProbeResult:
     files: list[ProbedFile]
 
-    processing_params: tuple[ProcessingMode, CodecParams] = field(init=False)
-    seen_codecs: dict[CodecParams, list[Path]] = field(init=False)
+    processing_params: tuple[ProcessingMode, CodecParams] | None = field(default=None, init=False)
+    seen_codecs: dict[CodecParams, list[Path]] = field(default_factory=dict, init=False)
 
     def __post_init__(self) -> None:
+        if self.files:
+            self._remove_prospective_output()
+        if self.files:
+            self.seen_codecs = self._generate_seen_codecs()
+            self.processing_params = self._generate_processing_params()
+
+    def add(self, probed_file: ProbedFile) -> None:
+        self.files.append(probed_file)
         self._remove_prospective_output()
-        self.seen_codecs = self._generate_seen_codecs()
-        self.processing_params = self._generate_processing_params()
+        if self.files:
+            self.seen_codecs = self._generate_seen_codecs()
+            self.processing_params = self._generate_processing_params()
+
+    def check_should_bail(
+        self,
+        *,
+        analyze_only: bool,
+        no_transcode: bool,
+        prefer_remux: bool,
+    ) -> ExitCode | None:
+        if analyze_only or not no_transcode or not self.processing_params:
+            return None
+
+        if not prefer_remux and self.processing_params[0] == ProcessingMode.TRANSCODE_UNIFORM:
+            pinfo(Emoji.STOP, "Files require transcode. Use '--prefer-remux' to remux them.")
+            return ExitCode.NO_TRANSCODE
+
+        if self.processing_params[0] == ProcessingMode.TRANSCODE_MIXED:
+            pinfo(Emoji.STOP, "Files require transcode. Bailing.")
+            return ExitCode.NO_TRANSCODE
+
+        return None
 
     def _remove_prospective_output(self) -> None:
         clean_files = []
@@ -153,12 +182,16 @@ class ProbeResult:
             bit_rates.append(params.bit_rate)
 
         # This might be a terrible assumption to make but in my testing this
-        # did not cause any issues in playback or chapter alignment: If the variance
+        # did not cause any issues in playback or chapter alignment: If the distance from mean
         # between bit rates is less than 128 bits, remuxing files works just fine.
-        return variance(bit_rates) < 128
+        avg = mean(bit_rates)
+        return max(abs(br - avg) for br in bit_rates) < 128
 
-    def _generate_processing_params(self) -> tuple[ProcessingMode, CodecParams]:
+    def _generate_processing_params(self) -> tuple[ProcessingMode, CodecParams] | None:
         seen_codecs = list(self.seen_codecs.keys())
+        if not seen_codecs:
+            return None
+
         first_seen = seen_codecs[0]
         mode = (
             ProcessingMode.REMUX

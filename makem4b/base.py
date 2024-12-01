@@ -34,6 +34,10 @@ def move_files(result: ProbeResult, target_path: Path, subdir: str) -> None:
 
 
 def generate_output_filename(result: ProbeResult, *, prefer_remux: bool, overwrite: bool) -> Path:
+    if not result.processing_params:
+        msg = "Processing parameters cannot be unset."
+        raise RuntimeError(msg)
+
     mode, _ = result.processing_params
     ext = ".m4b"
     if mode == ProcessingMode.TRANSCODE_UNIFORM and prefer_remux:
@@ -93,19 +97,16 @@ def process(
     overwrite: bool,
     cover: Path | None = None,
 ) -> None:
-    result = probe_files(files, disable_progress=env.debug)
-    if analyze_only:
+    result = probe_files(
+        files,
+        analyze_only=analyze_only,
+        no_transcode=no_transcode,
+        prefer_remux=prefer_remux,
+        disable_progress=env.debug,
+    )
+    if analyze_only or not result.processing_params:
         print_probe_result(result)
         raise Exit(ExitCode.SUCCESS)
-
-    if no_transcode:
-        if not prefer_remux and result.processing_params[0] == ProcessingMode.TRANSCODE_UNIFORM:
-            pinfo(Emoji.STOP, "Files require transcode. Use '--prefer-remux' to remux them.")
-            raise Exit(ExitCode.NO_TRANSCODE)
-
-        if result.processing_params[0] == ProcessingMode.TRANSCODE_MIXED:
-            pinfo(Emoji.STOP, "Files require transcode. Bailing.")
-            raise Exit(ExitCode.NO_TRANSCODE)
 
     output = generate_output_filename(result, prefer_remux=prefer_remux, overwrite=overwrite)
 

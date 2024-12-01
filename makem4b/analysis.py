@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from click.exceptions import Exit
 from rich import box, get_console
 from rich.progress import track
 from rich.table import Table
@@ -22,23 +23,41 @@ def _probe_file(file: Path) -> ProbedFile:
     return ProbedFile.from_ffmpeg_probe_output(ffprobed, file=file)
 
 
-def probe_files(files_to_probe: list[Path], *, disable_progress: bool = False) -> ProbeResult:
-    pinfo(Emoji.ANALYZE, f"Analyzing {len(files_to_probe)} files")
-    return ProbeResult(
-        files=[
-            _probe_file(file)
-            for file in track(
-                sorted(files_to_probe),
-                description="Analyzing",
-                transient=True,
-                disable=disable_progress,
-            )
-        ],
-    )
+def probe_files(
+    files: list[Path],
+    *,
+    analyze_only: bool,
+    no_transcode: bool,
+    prefer_remux: bool,
+    disable_progress: bool = False,
+) -> ProbeResult:
+    pinfo(Emoji.ANALYZE, f"Analyzing {len(files)} files")
+
+    result = ProbeResult(files=[])
+    for file in track(
+        sorted(files),
+        description="Analyzing",
+        transient=True,
+        disable=disable_progress,
+    ):
+        probed_file = _probe_file(file)
+        result.add(probed_file)
+
+        if exit_code := result.check_should_bail(
+            analyze_only=analyze_only,
+            no_transcode=no_transcode,
+            prefer_remux=prefer_remux,
+        ):
+            raise Exit(exit_code)
+
+    return result
 
 
 def print_probe_result(probed: ProbeResult) -> None:
     table = Table(box=box.SIMPLE, show_footer=True)
+    if not probed.processing_params:
+        pinfo(Emoji.NO_FILES, "No results to show.")
+        return
 
     mode, codec = probed.processing_params
     table.add_column(
@@ -49,7 +68,7 @@ def print_probe_result(probed: ProbeResult) -> None:
         "Bit Rate",
         justify="right",
         no_wrap=True,
-        footer=f"{codec.bit_rate/1000:.1f} kBit/s",
+        footer=f"{codec.bit_rate/1000:.3f} kBit/s",
     )
     table.add_column(
         "Sample Rate",
@@ -76,7 +95,7 @@ def print_probe_result(probed: ProbeResult) -> None:
     for codec, files in probed.seen_codecs.items():
         table.add_row(
             codec.codec_name,
-            f"{codec.bit_rate/1000:.1f} kBit/s",
+            f"{codec.bit_rate/1000:.3f} kBit/s",
             f"{codec.sample_rate/1000:.1f} kHz",
             f"{codec.channels:d}",
             "\n".join(str(f.relative_to(constants.CWD)) for f in files),

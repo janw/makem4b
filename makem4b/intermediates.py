@@ -18,6 +18,10 @@ if TYPE_CHECKING:
 def generate_intermediates(
     probed: ProbeResult, *, tmpdir: Path, prefer_remux: bool, disable_progress: bool = False
 ) -> tuple[list[Path], list[int]]:
+    if not probed.processing_params:
+        msg = "Processing parameters cannot be unset."
+        raise RuntimeError(msg)
+
     mode, codec = probed.processing_params
     specs_msg = f"({codec.bit_rate/1000:.1f} kBit/s, {codec.sample_rate/1000:.1f} kHz)"
 
