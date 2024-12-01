@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "makem4b"
-version = "1.1.2"
+version = "1.1.3"
 description = "Merge audio files into an audiobook."
 authors = ["Jan Willhaus <mail@janwillhaus.de>"]
 license = "Apache-2.0"

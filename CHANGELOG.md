@@ -1,3 +1,10 @@
+## v1.1.3 (2024-12-01)
+
+### Fix
+
+- Ensure temp storage is ignored by Plex, Audiobookshelf
+- Prevent transcode with -T but no -r
+
 ## v1.1.2 (2024-11-30)
 
 ### Fix
