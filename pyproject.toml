@@ -89,7 +89,8 @@ lint.extend-select = [
 ]
 lint.unfixable = [
     "B", # bugbear
-    "F841"  # assigned but unused
+    "F841",  # assigned but unused
+    "N805",  # unsafe: invalid-first-argument-name-for-method
 ]
 lint.ignore = [
     "SIM108", # if-else-block-instead-of-if-exp

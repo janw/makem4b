@@ -4,8 +4,9 @@ import json
 import re
 import shlex
 import subprocess
+from bisect import bisect_left
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from loguru import logger
 
@@ -35,15 +36,9 @@ FFMPEG_CMD = [
     "-y",
 ]
 
-TRANSCODE_CMD_ARGS_FDK = [
-    "-c:a",
-    "libfdk_aac",
-]
-TRANSCODE_CMD_ARGS_FREE = [
-    "-c:a",
-    "aac",
-]
 TRANSCODE_MAX_BITRATE = 192000
+TRANSCODE_CODEC_AAC_FDK = "libfdk_aac"
+TRANSCODE_CODEC_AAC_FREE = "aac"
 
 COPY_CMD_ARGS = [
     "-c:a",
@@ -101,24 +96,41 @@ def _make_input_args(inputs: list[Path | str] | Path | str) -> list[str]:
     return args
 
 
-def make_transcoding_args(codec: CodecParams) -> list[str]:
-    codec_args = [
-        "-ar",
-        str(codec.sample_rate),
-        "-b:a",
-        str(min(codec.bit_rate, TRANSCODE_MAX_BITRATE)),
-        "-vn",
-    ]
+def make_transcoding_args(codec: CodecParams, target_format: Literal["m4b"] = "m4b") -> list[str]:
+    encoder: str | None
+    allowed_sample_rates: tuple[float | int, ...] | None = None
+    match target_format:
+        case "m4b":
+            version_output = subprocess.check_output(  # noqa: S603
+                [FFMPEG_CMD_BIN, "-version"],
+                stderr=subprocess.PIPE,
+            ).decode()
 
-    version_output = subprocess.check_output(  # noqa: S603
-        [FFMPEG_CMD_BIN, "-version"],
-        stderr=subprocess.PIPE,
-    ).decode()
+            if "enable-libfdk-aac" in version_output:
+                pinfo(Emoji.FDKAAC, "Using libfdk-aac encoder")
+                encoder = TRANSCODE_CODEC_AAC_FDK
+                allowed_sample_rates = constants.AAC_SAMPLE_RATES
+            else:
+                encoder = TRANSCODE_CODEC_AAC_FREE
 
-    if "enable-libfdk-aac" in version_output:
-        pinfo(Emoji.FDKAAC, "Using libfdk-aac encoder")
-        return TRANSCODE_CMD_ARGS_FDK + codec_args
-    return TRANSCODE_CMD_ARGS_FREE + codec_args
+    if not encoder:
+        raise NotImplementedError
+
+    if allowed_sample_rates:
+        idx = bisect_left(allowed_sample_rates, codec.sample_rate)
+        sample_rate = allowed_sample_rates[idx]
+    else:
+        sample_rate = codec.sample_rate
+
+    bit_rate = 16000
+    while bit_rate < codec.bit_rate and bit_rate < TRANSCODE_MAX_BITRATE:
+        bit_rate += 16000
+
+    pinfo(
+        Emoji.TRANSCODE,
+        f"Transcoding files to {target_format} ({bit_rate/1000:.1f} kBit/s, {sample_rate/1000:.1f} kHz)",
+    )
+    return shlex.split(f"-c:a {encoder} -b:a {bit_rate} -ar {sample_rate} -vn")
 
 
 def _poll_for_progress(process: subprocess.Popen[bytes]) -> Generator[int, None, None]:

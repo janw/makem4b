@@ -29,7 +29,6 @@ def generate_intermediates(
         pinfo(Emoji.AVOIDING_TRANSCODE, "Remuxing", specs_msg)
         args = ffmpeg.COPY_CMD_ARGS
     else:
-        pinfo(Emoji.TRANSCODE, "Transcoding files", specs_msg)
         args = ffmpeg.make_transcoding_args(codec)
 
     intermediates: list[Path] = []

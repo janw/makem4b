@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from bisect import bisect_left
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum
@@ -162,11 +161,9 @@ class ProbeResult:
             if (fch := codec.channels) < min_channels:
                 min_channels = fch
 
-        idx = bisect_left(constants.AAC_SAMPLE_RATES, max_sample_rate)
-        target_sample_rate = constants.AAC_SAMPLE_RATES[idx]
         return ProcessingMode.TRANSCODE_MIXED, CodecParams(
             "aac",
-            sample_rate=target_sample_rate,
+            sample_rate=max_sample_rate,
             bit_rate=max_bit_rate,
             channels=min_channels,
         )

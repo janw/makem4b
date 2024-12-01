@@ -40,7 +40,7 @@ def generate_output_filename(result: ProbeResult, *, prefer_remux: bool, overwri
         ext = result.first.filename.suffix
         pinfo(Emoji.AVOIDING_TRANSCODE, f"Avoiding transcode, saving as {ext}")
     elif mode == ProcessingMode.TRANSCODE_MIXED:
-        pinfo(Emoji.MUST_TRANSCODE, f"Mixed codec properties, must transcode {ext}")
+        pinfo(Emoji.MUST_TRANSCODE, f"Mixed codec properties, must transcode to {ext}")
 
     output = result.first.filename.with_name(result.first.output_filename_stem + ext).resolve()
     if output.is_file() and not overwrite:
