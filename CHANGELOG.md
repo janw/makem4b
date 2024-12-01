@@ -1,3 +1,13 @@
+## v1.2.0 (2024-12-01)
+
+### Feat
+
+- Consider bit rates equal with less than 128bit variance
+
+### Refactor
+
+- Move sr/br calculation to ffmpeg mod
+
 ## v1.1.4 (2024-12-01)
 
 ### Fix
