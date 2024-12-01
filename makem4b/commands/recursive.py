@@ -82,9 +82,10 @@ def cli(
         click.echo(ctx.command.get_help(ctx))
         raise Exit(ExitCode.USAGE_ERROR)
 
-    for dirpath, _, filenames in directory.walk():
+    for dirpath, dirnames, filenames in directory.walk():
         matches = filter_files(dirpath=dirpath, filenames=filenames, regex=re_types)
         filenames.sort()
+        dirnames.sort()
 
         seen_types = list(matches.keys())
         if (type_cnt := len(seen_types)) > 1:
