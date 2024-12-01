@@ -11,6 +11,7 @@ from click.exceptions import Exit
 from makem4b.base import process
 from makem4b.cli.decorators import add_processing_options, pass_ctx_and_env
 from makem4b.emoji import Emoji
+from makem4b.types import ExitCode
 from makem4b.utils import comma_separated_suffix_list, pinfo, regex_pattern
 
 if TYPE_CHECKING:
@@ -79,7 +80,7 @@ def cli(
     if not directory:
         pinfo(Emoji.NO_FILES, "No files given.", style="bold yellow")
         click.echo(ctx.command.get_help(ctx))
-        raise Exit(2)
+        raise Exit(ExitCode.USAGE_ERROR)
 
     for dirpath, _, filenames in directory.walk():
         matches = filter_files(dirpath=dirpath, filenames=filenames, regex=re_types)

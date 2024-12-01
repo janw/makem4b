@@ -13,7 +13,7 @@ from makem4b.analysis import print_probe_result, probe_files
 from makem4b.emoji import Emoji
 from makem4b.intermediates import generate_concat_file, generate_intermediates
 from makem4b.metadata import extract_cover_img, generate_metadata
-from makem4b.types import ProbeResult, ProcessingMode
+from makem4b.types import ExitCode, ProbeResult, ProcessingMode
 from makem4b.utils import TaskProgress, pinfo
 
 if TYPE_CHECKING:
@@ -45,7 +45,7 @@ def generate_output_filename(result: ProbeResult, *, prefer_remux: bool, overwri
     output = result.first.filename.with_name(result.first.output_filename_stem + ext).resolve()
     if output.is_file() and not overwrite:
         pinfo(Emoji.STOP, "Target file already exists:", output.relative_to(constants.CWD), style="bold red")
-        raise Exit(1)
+        raise Exit(ExitCode.TARGET_EXISTS)
 
     return output
 
@@ -96,15 +96,16 @@ def process(
     result = probe_files(files, disable_progress=env.debug)
     if analyze_only:
         print_probe_result(result)
-        raise Exit(0)
+        raise Exit(ExitCode.SUCCESS)
 
-    if no_transcode and result.processing_params[0] == ProcessingMode.TRANSCODE_UNIFORM:
-        pinfo(Emoji.STOP, "Files require transcode. Use '--prefer-remux' to remux them.")
-        raise Exit(8)
+    if no_transcode:
+        if not prefer_remux and result.processing_params[0] == ProcessingMode.TRANSCODE_UNIFORM:
+            pinfo(Emoji.STOP, "Files require transcode. Use '--prefer-remux' to remux them.")
+            raise Exit(ExitCode.NO_TRANSCODE)
 
-    if no_transcode and result.processing_params[0] == ProcessingMode.TRANSCODE_MIXED:
-        pinfo(Emoji.STOP, "Files require transcode. Bailing.")
-        raise Exit(8)
+        if result.processing_params[0] == ProcessingMode.TRANSCODE_MIXED:
+            pinfo(Emoji.STOP, "Files require transcode. Bailing.")
+            raise Exit(ExitCode.NO_TRANSCODE)
 
     output = generate_output_filename(result, prefer_remux=prefer_remux, overwrite=overwrite)
 

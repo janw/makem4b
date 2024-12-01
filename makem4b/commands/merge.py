@@ -9,6 +9,7 @@ from click.exceptions import Exit
 from makem4b.base import process
 from makem4b.cli.decorators import add_processing_options, pass_ctx_and_env
 from makem4b.emoji import Emoji
+from makem4b.types import ExitCode
 from makem4b.utils import pinfo
 
 if TYPE_CHECKING:
@@ -58,7 +59,7 @@ def cli(
     if not files:
         pinfo(Emoji.NO_FILES, "No files given.", style="bold yellow")
         click.echo(ctx.command.get_help(ctx))
-        raise Exit(1)
+        raise Exit(ExitCode.USAGE_ERROR)
 
     if cover and cover.suffix.lower() not in (".png", "jpeg", ".jpg"):
         ctx.fail("Argument -c/--cover must point to JPEG or PNG file.")

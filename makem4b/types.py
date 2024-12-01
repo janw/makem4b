@@ -3,7 +3,7 @@ from __future__ import annotations
 from bisect import bisect_left
 from collections import defaultdict
 from dataclasses import dataclass, field
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 from typing import TYPE_CHECKING, NamedTuple
 
 from makem4b import constants
@@ -31,6 +31,14 @@ class ProcessingMode(StrEnum):
     REMUX_FIX_DTS = "Remux and fix DTS"  # TODO: implement
     TRANSCODE_UNIFORM = "Transcode Uniform"
     TRANSCODE_MIXED = "Transcode Mixed"
+
+
+class ExitCode(IntEnum):
+    SUCCESS = 0
+    GENERIC_ERROR = 1
+    USAGE_ERROR = 2
+    TARGET_EXISTS = 4
+    NO_TRANSCODE = 8
 
 
 class CodecParams(NamedTuple):
