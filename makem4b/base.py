@@ -129,14 +129,16 @@ def process(
             tmpdir=tmpdir,
         )
 
+        output_tmp = tmpdir / output.name
         merge(
             concat_file,
             metadata_file=metadata_file,
             cover_file=cover_file,
             total=result.approx_size,
-            output=output,
+            output=output_tmp,
             disable_progress=env.debug,
         )
+        output_tmp.rename(output)
 
     # copy_mtime(result.first.filename, output)
     pinfo(Emoji.SAVE, f'Saved to "{output.relative_to(env.cwd)}"\n', style="bold green")

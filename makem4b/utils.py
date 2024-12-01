@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 from rich import get_console
 from rich.progress import Progress
 
+from makem4b import constants
 from makem4b.emoji import Emoji
 
 if TYPE_CHECKING:
@@ -72,3 +73,12 @@ def parse_grouping(val: str) -> tuple[str, str] | None:
     if match := re_grouping.match(val):
         return match.group("series"), match.group("part")
     return None
+
+
+def make_tempdir(parent: Path) -> Path:
+    tempdir = parent / constants.TEMPDIR_NAME
+    tempdir.mkdir(exist_ok=True)
+    (tempdir / constants.CACHEDIR_TAG).touch()
+    (tempdir / constants.DOTIGNORE_FILE).touch()
+    (tempdir / constants.PLEXIGNORE_FILE).write_text("*")
+    return tempdir

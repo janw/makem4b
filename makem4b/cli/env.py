@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from makem4b import constants
+from makem4b.utils import make_tempdir
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -21,13 +21,11 @@ class Environment:
 
     @contextmanager
     def handle_temp_storage(self, *, parent: Path) -> Generator[Path, None, None]:
-        tmpdir = parent / "makem4b_tmpdir"
-        tmpdir.mkdir(exist_ok=True)
-        (tmpdir / constants.CACHEDIR_TAG).touch()
+        tempdir = make_tempdir(parent)
         try:
-            yield tmpdir
+            yield tempdir
         finally:
             if not self.keep_intermediates:
-                for file in tmpdir.iterdir():
+                for file in tempdir.iterdir():
                     file.unlink(missing_ok=True)
-                tmpdir.rmdir()
+                tempdir.rmdir()
