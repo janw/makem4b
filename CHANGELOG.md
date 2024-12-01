@@ -1,3 +1,9 @@
+## v1.1.4 (2024-12-01)
+
+### Fix
+
+- Ensure -Tr work together
+
 ## v1.1.3 (2024-12-01)
 
 ### Fix

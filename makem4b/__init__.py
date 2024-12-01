@@ -2,4 +2,4 @@ from loguru import logger
 
 logger.disable("makem4b")
 
-__version__ = "v1.1.3"
+__version__ = "v1.1.4"
