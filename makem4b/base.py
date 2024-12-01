@@ -98,6 +98,10 @@ def process(
         print_probe_result(result)
         raise Exit(0)
 
+    if no_transcode and result.processing_params[0] == ProcessingMode.TRANSCODE_UNIFORM:
+        pinfo(Emoji.STOP, "Files require transcode. Use '--prefer-remux' to remux them.")
+        raise Exit(8)
+
     if no_transcode and result.processing_params[0] == ProcessingMode.TRANSCODE_MIXED:
         pinfo(Emoji.STOP, "Files require transcode. Bailing.")
         raise Exit(8)
