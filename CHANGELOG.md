@@ -1,3 +1,9 @@
+## v1.3.0 (2024-12-01)
+
+### Feat
+
+- Bail early if analysis returns irreconcilable results
+
 ## v1.2.1 (2024-12-01)
 
 ### Fix
