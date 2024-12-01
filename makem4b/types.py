@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum
+from statistics import variance
 from typing import TYPE_CHECKING, NamedTuple
 
 from makem4b import constants
@@ -139,16 +140,33 @@ class ProbeResult:
             codecs[file.codec_params].append(file.filename)
         return codecs
 
+    @staticmethod
+    def _codecs_match_loosely(seen_codecs: list[CodecParams]) -> bool:
+        cn = seen_codecs[0].codec_name
+        sr = seen_codecs[0].sample_rate
+        ch = seen_codecs[0].channels
+
+        bit_rates = [seen_codecs[0].bit_rate]
+        for params in seen_codecs[1:]:
+            if params.codec_name != cn or params.sample_rate != sr or params.channels != ch:
+                return False
+            bit_rates.append(params.bit_rate)
+
+        # This might be a terrible assumption to make but in my testing this
+        # did not cause any issues in playback or chapter alignment: If the variance
+        # between bit rates is less than 128 bits, remuxing files works just fine.
+        return variance(bit_rates) < 128
+
     def _generate_processing_params(self) -> tuple[ProcessingMode, CodecParams]:
         seen_codecs = list(self.seen_codecs.keys())
-        if len(seen_codecs) == 1:
-            codec = seen_codecs[0]
-            mode = (
-                ProcessingMode.REMUX
-                if codec.codec_name in constants.SUPPORT_REMUX_CODECS
-                else ProcessingMode.TRANSCODE_UNIFORM
-            )
-            return mode, codec
+        first_seen = seen_codecs[0]
+        mode = (
+            ProcessingMode.REMUX
+            if first_seen.codec_name in constants.SUPPORT_REMUX_CODECS
+            else ProcessingMode.TRANSCODE_UNIFORM
+        )
+        if len(seen_codecs) == 1 or self._codecs_match_loosely(seen_codecs):
+            return mode, first_seen
 
         max_bit_rate = 0.0
         max_sample_rate = 0.0
