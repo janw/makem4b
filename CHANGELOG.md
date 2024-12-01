@@ -1,3 +1,9 @@
+## v1.2.1 (2024-12-01)
+
+### Fix
+
+- Sort recursive subdirs consistently
+
 ## v1.2.0 (2024-12-01)
 
 ### Feat
